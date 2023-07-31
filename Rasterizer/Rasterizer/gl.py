@@ -44,6 +44,11 @@ class Renderer(object):
         if (0 <= x < self.width) and (0 <= y < self.height):
             self.pixels[x][y] = clr or self.currColor
 
+    def glTriangle(self, v0, v1, v2, clr = None):
+        self.glLine(v0, v1, clr or self.currColor)
+        self.glLine(v1, v2, clr or self.currColor)
+        self.glLine(v2, v0, clr or self.currColor)
+
     def glLine(self, v0, v1, clr = None):
         # Bresenham line algorithm
         # y = m*x + b
