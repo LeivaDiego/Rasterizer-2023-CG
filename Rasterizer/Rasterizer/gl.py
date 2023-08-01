@@ -192,26 +192,26 @@ class Renderer(object):
 
                     if bCoords != None:
                         u,v,w = bCoords
+                        if 0<=u<=1 and 0<=v<=1 and 0<=w<=1:
+                            # Calculo de valor profundidad del punto del triangulo
+                            z = u * A[2] + v * B[2] + w * C[2]
 
-                        # Calculo de valor profundidad del punto del triangulo
-                        z = u * A[2] + v * B[2] + w * C[2]
+                            if z < self.zbuffer[x][y]:
 
-                        if z < self.zbuffer[x][y]:
-
-                            self.zbuffer[x][y] = z
+                                self.zbuffer[x][y] = z
                         
-                            uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
-                                   u * vtA[1] + v * vtB[1] + w * vtC[1])
+                                uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
+                                       u * vtA[1] + v * vtB[1] + w * vtC[1])
                         
-                            # Calculo de color
-                            if self.fragmentShader != None:
-                                colorP = self.fragmentShader(texCoords = uvs,
-                                                             texture = self.activeTexture)
+                                # Calculo de color
+                                if self.fragmentShader != None:
+                                    colorP = self.fragmentShader(texCoords = uvs,
+                                                                 texture = self.activeTexture)
 
-                                self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
+                                    self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
 
-                            else:
-                                self.glPoint(x, y, colorP)
+                                else:
+                                    self.glPoint(x, y, colorP)
 
 
     def glModelMatrix(self, translate = (0,0,0), rotate=(0,0,0), scale = (1,1,1)):
