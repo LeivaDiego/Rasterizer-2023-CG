@@ -4,6 +4,7 @@ from myNumpy import matrixMultiplier, barycentrinCoords
 from collections import namedtuple
 from obj import Obj
 
+
 V2 = namedtuple('Point2', ['x','y'])
 V3 = namedtuple('Point3',['x','y','z'])
 
@@ -11,6 +12,7 @@ POINTS = 0
 LINES = 1
 TRIANGLES = 2
 QUADS = 3
+
 
 def char(c):
     # 1 byte
@@ -29,6 +31,7 @@ def color(r, g, b):
                   int(g * 255),
                   int(r * 255)])
 
+
 class Model(object):
     def __init__(self, filename, translate = (0,0,0), rotate = (0,0,0), scale=(1,1,1)):
         model = Obj(filename)
@@ -40,6 +43,7 @@ class Model(object):
         self.translate = translate
         self.rotate = rotate
         self.scale = scale
+
 
 class Renderer(object):
     def __init__(self, width, height):
@@ -59,9 +63,11 @@ class Renderer(object):
 
         self.objects = []
 
+
     def glAddVertices(self, vertices):
         for vert in vertices:
             self.vertexBuffer.append(vert)
+
 
     def glPrimitiveAssembly(self, tVerts):
         primitives = []
@@ -76,21 +82,27 @@ class Renderer(object):
 
         return primitives
 
+
     def glClearColor(self, r, g, b):
         self.clearColor = color(r,g,b)
+
 
     def glColor(self, r, g, b):
         self.currColor = color(r,g,b)
 
+
     def glClear(self):
         self.pixels = [[self.clearColor for y in range(self.height)]
                        for x in range(self.width)]
+
         self.zbuffer = [[float('inf') for y in range(self.height)]
                         for x in range(self.width)]
+
 
     def glPoint(self, x, y, clr = None):
         if (0 <= x < self.width) and (0 <= y < self.height):
             self.pixels[x][y] = clr or self.currColor
+
 
     def glTriangle(self, A, B, C, clr = None):
         if A[1] < B[1]:
@@ -147,10 +159,8 @@ class Renderer(object):
             flatBottom(A,B,D)
             flatTop(B,D,C)
 
+
     def glTriangle_bc(self, A, B, C):
-        self.glLine(A, B)
-        self.glLine(B, C)
-        self.glLine(C, A)
 
         minX = round(min(A[0], B[0], C[0]))
         maxX = round(max(A[0], B[0], C[0]))
@@ -167,23 +177,34 @@ class Renderer(object):
                 u, v, w = barycentrinCoords(A,B,C,P)
 
                 if 0<=u<=1 and 0<=v<=1 and 0<=w<=1:
-                    colorP = color(u * colorA[0] + v * colorB[0] + w * colorC[0],
-                                   u * colorA[1] + v * colorB[1] + w * colorC[1],
-                                   u * colorA[2] + v * colorB[2] + w * colorC[2])
-                    self.glPoint(x, y, colorP)
 
-    def glModelMatrix(self, translate = (0,0,0), rotate=(0,0,0),scale = (1,1,1)):
+                    # Calculo de valor profundidad del punto del triangulo
+                    z = u * A[2] + v * B[2] + w * C[2]
+
+                    if z < self.zbuffer[x][y]:
+                        self.zbuffer[x][y] = z
+                        # Calculo de color
+                        colorP = color(u * colorA[0] + v * colorB[0] + w * colorC[0],
+                                       u * colorA[1] + v * colorB[1] + w * colorC[1],
+                                       u * colorA[2] + v * colorB[2] + w * colorC[2])
+                        self.glPoint(x, y, colorP)
+
+
+    def glModelMatrix(self, translate = (0,0,0), rotate=(0,0,0), scale = (1,1,1)):
+        
+        # Traslacion
         translation = [[1,0,0,translate[0]],
                      [0,1,0,translate[1]],
                      [0,0,1,translate[2]],
                      [0,0,0,1]]
         
+        # Escala
         scaleMat = [[scale[0],0,0,0],
                     [0,scale[1],0,0],
                     [0,0,scale[2],0],
                     [0,0,0,1]]
 
-        
+        #Rotacion
         rotationX = [[1,0,0,0],
                      [0,cos(radians(rotate[0])),-sin(radians(rotate[0])),0],
                      [0,sin(radians(rotate[0])),cos(radians(rotate[0])),0],
@@ -202,6 +223,7 @@ class Renderer(object):
         rotationMat = matrixMultiplier((matrixMultiplier(rotationX,rotationY)),rotationZ)
 
         return matrixMultiplier(matrixMultiplier(translation,rotationMat),scaleMat)
+
 
     def glLine(self, v0, v1, clr = None):
         # Bresenham line algorithm
@@ -268,8 +290,10 @@ class Renderer(object):
 
                 limit += 1
 
+
     def glLoadModel(self, filename, translate = (0,0,0), rotate = (0,0,0), scale = (1,1,1)):
         self.objects.append(Model(filename,translate,rotate,scale))
+
 
     def glRender(self):
         transformedVerts = []
