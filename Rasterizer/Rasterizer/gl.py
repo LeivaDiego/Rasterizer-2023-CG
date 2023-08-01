@@ -3,7 +3,7 @@ from math import sin, cos, radians
 from myNumpy import matrixMultiplier, barycentrinCoords
 from collections import namedtuple
 from obj import Obj
-
+from texture import Texture
 
 V2 = namedtuple('Point2', ['x','y'])
 V3 = namedtuple('Point3',['x','y','z'])
@@ -34,15 +34,22 @@ def color(r, g, b):
 
 class Model(object):
     def __init__(self, filename, translate = (0,0,0), rotate = (0,0,0), scale=(1,1,1)):
+        
         model = Obj(filename)
+        
         self.vertices = model.vertices
-        self.textcoords = model.vertices
+        self.texcoords = model.texcoords
         self.normals = model.normals
         self.faces = model.faces
 
         self.translate = translate
         self.rotate = rotate
         self.scale = scale
+
+
+    def LoadTexture(self, textureName):
+        self.texture = Texture(textureName)
+
 
 
 class Renderer(object):
@@ -55,13 +62,15 @@ class Renderer(object):
 
         self.glColor(1,1,1)
 
+        self.objects = []
+
         self.vertexShader = None
         self.fragmentShader = None
 
         self.primitiveType = TRIANGLES
         self.vertexBuffer = []
 
-        self.objects = []
+        self.activeTexture = None
 
 
     def glAddVertices(self, vertices):
@@ -69,15 +78,23 @@ class Renderer(object):
             self.vertexBuffer.append(vert)
 
 
-    def glPrimitiveAssembly(self, tVerts):
+    def glPrimitiveAssembly(self, tVerts, tTexCoords):
+        
         primitives = []
 
         if self.primitiveType == TRIANGLES:
             for i in range(0, len(tVerts), 3):
                 triangle = []
-                triangle.append(tVerts[i])
-                triangle.append(tVerts[i+1])
-                triangle.append(tVerts[i+2])
+                # Vertices
+                triangle.append( tVerts[i] )
+                triangle.append( tVerts[i + 1] )
+                triangle.append( tVerts[i + 2] )
+
+                # coordenadas de texturas
+                triangle.append( tTexCoords[i] )
+                triangle.append( tTexCoords[i + 1] )
+                triangle.append( tTexCoords[i + 2] )
+
                 primitives.append(triangle)
 
         return primitives
@@ -160,34 +177,41 @@ class Renderer(object):
             flatTop(B,D,C)
 
 
-    def glTriangle_bc(self, A, B, C):
+    def glTriangle_bc(self, A, B, C, vtA, vtB, vtC):
 
         minX = round(min(A[0], B[0], C[0]))
         maxX = round(max(A[0], B[0], C[0]))
         minY = round(min(A[1], B[1], C[1]))
         maxY = round(max(A[1], B[1], C[1]))
 
-        colorA = (1,0,0)
-        colorB = (0,1,0)
-        colorC = (0,0,1)
-
         for x in range(minX, maxX + 1):
             for y in range(minY, maxY + 1):
-                P = (x,y)
-                u, v, w = barycentrinCoords(A,B,C,P)
+                if (0 <= x < self.width) and (0 <= y < self.height):
+                    P = (x,y)
+                    bCoords = barycentrinCoords(A,B,C,P)
 
-                if 0<=u<=1 and 0<=v<=1 and 0<=w<=1:
+                    if bCoords != None:
+                        u,v,w = bCoords
 
-                    # Calculo de valor profundidad del punto del triangulo
-                    z = u * A[2] + v * B[2] + w * C[2]
+                        # Calculo de valor profundidad del punto del triangulo
+                        z = u * A[2] + v * B[2] + w * C[2]
 
-                    if z < self.zbuffer[x][y]:
-                        self.zbuffer[x][y] = z
-                        # Calculo de color
-                        colorP = color(u * colorA[0] + v * colorB[0] + w * colorC[0],
-                                       u * colorA[1] + v * colorB[1] + w * colorC[1],
-                                       u * colorA[2] + v * colorB[2] + w * colorC[2])
-                        self.glPoint(x, y, colorP)
+                        if z < self.zbuffer[x][y]:
+
+                            self.zbuffer[x][y] = z
+                        
+                            uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
+                                   u * vtA[1] + v * vtB[1] + w * vtC[1])
+                        
+                            # Calculo de color
+                            if self.fragmentShader != None:
+                                colorP = self.fragmentShader(texCoords = uvs,
+                                                             texture = self.activeTexture)
+
+                                self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
+
+                            else:
+                                self.glPoint(x, y, colorP)
 
 
     def glModelMatrix(self, translate = (0,0,0), rotate=(0,0,0), scale = (1,1,1)):
@@ -291,23 +315,29 @@ class Renderer(object):
                 limit += 1
 
 
-    def glLoadModel(self, filename, translate = (0,0,0), rotate = (0,0,0), scale = (1,1,1)):
-        self.objects.append(Model(filename,translate,rotate,scale))
+    def glLoadModel(self, filename, textureName, translate = (0,0,0), rotate = (0,0,0), scale = (1,1,1)):
+        
+        model = Model(filename, translate, rotate, scale)
+        model.LoadTexture(textureName)
+
+        self.objects.append(model)
 
 
     def glRender(self):
         transformedVerts = []
+        texCoords = []
 
         for model in self.objects:
+
+            self.activeTexture = model.texture
             mMat = self.glModelMatrix(model.translate, model.rotate, model.scale)
 
             for face in model.faces:
                 vertCount = len(face)
-
-                v0 = model.vertices[face[0][0]-1]
-                v1 = model.vertices[face[1][0]-1]
-                v2 = model.vertices[face[2][0]-1]
-
+                # para los vertices
+                v0 = model.vertices[ face[0][0] - 1]
+                v1 = model.vertices[ face[1][0] - 1]
+                v2 = model.vertices[ face[2][0] - 1]
                 if vertCount == 4:
                     v3 = model.vertices[face[3][0]-1]
                 
@@ -326,11 +356,29 @@ class Renderer(object):
                     transformedVerts.append(v2)
                     transformedVerts.append(v3)
 
-        primitives = self.glPrimitiveAssembly(transformedVerts)
+                # Para las coordenadas de textura
+                vt0 = model.texcoords[ face[0][1] - 1]
+                vt1 = model.texcoords[ face[1][1] - 1]
+                vt2 = model.texcoords[ face[2][1] - 1]
+                if vertCount == 4:
+                    vt3 = model.texcoords[face[3][1] - 1]
+
+                texCoords.append(vt0)
+                texCoords.append(vt1)
+                texCoords.append(vt2)
+                if vertCount == 4:
+                    texCoords.append(vt0)
+                    texCoords.append(vt2)
+                    texCoords.append(vt3)
+
+
+        primitives = self.glPrimitiveAssembly(transformedVerts, texCoords)
 
         for prim in primitives:
             if self.primitiveType == TRIANGLES:
-                self.glTriangle_bc(prim[0],prim[1],prim[2])
+                # Triangulo con coordenadas baricentricas
+                self.glTriangle_bc(prim[0], prim[1], prim[2],
+                                   prim[3], prim[4], prim[5])
 
 
     def glFinish(self, filename):
@@ -340,7 +388,7 @@ class Renderer(object):
             file.write(char("M"))
             file.write(dword(14 + 40 + (self.width * self.height * 3)))
             file.write(dword(0))
-            file.write(dword(14+40))
+            file.write(dword(14 + 40))
 
             # InfoHeader
             file.write(dword(40)) 

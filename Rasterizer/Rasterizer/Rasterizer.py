@@ -14,10 +14,12 @@ rend.fragmentShader = shaders.fragmentShader
 
 
 # Cargar el modelo en el renderizador
-rend.glLoadModel("model.obj",                       # Archivo a cargar
-                 translate=(width/2,height/2,0),    # Cambiar los valores de posicion x,y dependiendo de donde se quiera colocar el modelo (z se deja en 0)
-                 rotate=(0,180,0),                    # Cambiar los valores de los �ngulos EN GRADOS para rotar el modelo en los ejes x,y,z respectivamente
-                 scale = (400,400,400))             # Cambiar los valores para agrandar el modelo en los ejes x,y,z, siendo 1,1,1 su tama�o original
+rend.glLoadModel(filename = "model.obj",              # Archivo del modelo a cargar
+                 textureName = "model.bmp",           # Archivo de la textura del modelo
+                 translate = (width/2,height/2,0),    # Cambiar los valores de posicion x,y dependiendo de donde se quiera colocar el modelo (z se deja en 0)
+                 rotate = (0,90,0),                   # Cambiar los valores de los �ngulos EN GRADOS para rotar el modelo en los ejes x,y,z respectivamente
+                 scale = (400,400,400))               # Cambiar los valores para agrandar el modelo en los ejes x,y,z, siendo 1,1,1 su tama�o original
+
 
 # Renderizar el modelo en la imagen
 rend.glRender()

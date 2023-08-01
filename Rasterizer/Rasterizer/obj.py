@@ -4,7 +4,7 @@ class Obj(object):
             self.lines = file.read().splitlines()
     
         self.vertices = []
-        self.textcoord = []
+        self.texcoords = []
         self.normals = []
         self.faces = []
 
@@ -17,7 +17,7 @@ class Obj(object):
             if prefix == "v": # Vertices
                 self.vertices.append(list(map(float,value.split(" "))))
             elif prefix == "vt": # Texture coordinates
-                self.textcoord.append(list(map(float,value.split(" "))))
+                self.texcoords.append(list(map(float,value.split(" "))))
             elif prefix == "vn": # Normals
                 self.normals.append(list(map(float,value.split(" "))))
             if prefix == "f": # Faces
