@@ -2,7 +2,7 @@ import struct
 from math import sin, cos, radians
 from myNumpy import matrixMultiplier
 from collections import namedtuple
-
+from obj import Obj
 
 V2 = namedtuple('Point2', ['x','y'])
 V3 = namedtuple('Point3',['x','y','z'])
@@ -29,6 +29,18 @@ def color(r, g, b):
                   int(g * 255),
                   int(r * 255)])
 
+class Model(object):
+    def __init__(self, filename, translate = (0,0,0), rotate = (0,0,0), scale=(1,1,1)):
+        model = Obj(filename)
+        self.vertices = model.vertices
+        self.textcoords = model.vertices
+        self.normals = model.normals
+        self.faces = model.faces
+
+        self.translate = translate
+        self.rotate = rotate
+        self.scale = scale
+
 class Renderer(object):
     def __init__(self, width, height):
         self.width = width
@@ -44,6 +56,8 @@ class Renderer(object):
 
         self.primitiveType = TRIANGLES
         self.vertexBuffer = []
+
+        self.objects = []
 
     def glAddVertices(self, vertices):
         for vert in vertices:
@@ -122,10 +136,10 @@ class Renderer(object):
         #    self.glPoint(x, int(y))
         #    y += m
 
-        x0 = int(v0.x)
-        x1 = int(v1.x)
-        y0 = int(v0.y)
-        y1 = int(v1.y)
+        x0 = int(v0[0])
+        x1 = int(v1[0])
+        y0 = int(v0[1])
+        y1 = int(v1[1])
 
         # Si el punto 0 es igual al punto 1, solo dibuja el punto en v0
         if x0 == x1 and y0 == y1:
@@ -177,14 +191,39 @@ class Renderer(object):
 
                 limit += 1
 
+    def glLoadModel(self, filename, translate = (0,0,0), rotate = (0,0,0), scale = (1,1,1)):
+        self.objects.append(Model(filename,translate,rotate,scale))
+
     def glRender(self):
         transformedVerts = []
 
-        for vert in self.vertexBuffer:
-            if self.vertexShader:
-                transformedVerts.append(self.vertexShader(vert, modelMatrix = self.modelMatrix))
-            else:
-                transformedVerts.append(vert)
+        for model in self.objects:
+            mMat = self.glModelMatrix(model.translate,model.rotate, model.scale)
+
+            for face in model.faces:
+                vertCount = len(face)
+
+                v0 = model.vertices[face[0][0]-1]
+                v1 = model.vertices[face[1][0]-1]
+                v2 = model.vertices[face[2][0]-1]
+
+                if vertCount == 4:
+                    v3 = model.vertices[face[3][0]-1]
+                
+                if self.vertexShader:
+                    v0 = self.vertexShader(v0, modelMatrix = mMat)
+                    v1 = self.vertexShader(v1, modelMatrix = mMat)
+                    v2 = self.vertexShader(v2, modelMatrix = mMat)
+                    if vertCount == 4:
+                        v3 = self.vertexShader(v3, modelMatrix = mMat)
+                
+                transformedVerts.append(v0)
+                transformedVerts.append(v1)
+                transformedVerts.append(v2)
+                if vertCount == 4:
+                    transformedVerts.append(v0)
+                    transformedVerts.append(v2)
+                    transformedVerts.append(v3)
 
         primitives = self.glPrimitiveAssembly(transformedVerts)
 
@@ -199,8 +238,7 @@ class Renderer(object):
 
         for prim in primitives:
             if self.primitiveType == TRIANGLES:
-                self.glTriangle(prim[0], prim[1], prim[2], primColor)
-
+                self.glTriangle(prim[0],prim[1],prim[2], primColor)
 
 
     def glFinish(self, filename):

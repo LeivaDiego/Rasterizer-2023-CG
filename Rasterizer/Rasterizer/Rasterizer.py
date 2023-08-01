@@ -1,24 +1,23 @@
-import random
 import shaders
-from gl import Renderer, V2, V3, color
+from obj import Obj
+from gl import Renderer
 
+# La resolucion de la imagen generada
+# width es el ancho en pixeles
+# height es el alto en pixeles
 width = 512
-height = 512
+height = 512 
 
-rend = Renderer(width,height)
+rend = Renderer(width, height)
 
-rend.vertexShader= shaders.vertexShader
+rend.vertexShader = shaders.vertexShader
 rend.fragmentShader = shaders.fragmentShader
 
-verts = [V3(0,0,0),
-         V3(50,0,0),
-         V3(25,40,0)]
-
-rend.glAddVertices(verts)
-
-rend.glModelMatrix(translate=(width/2, height/2, 0),
-                   rotate=(0,0,0),
-                   scale = (5,5,5))
+# Cargar el modelo en el renderizador
+rend.glLoadModel("model.obj",                       # Archivo a cargar
+                 translate=(width/2,height/2,0),    # Cambiar los valores de posicion x,y dependiendo de donde se quiera colocar el modelo (z se deja en 0)
+                 rotate=(0,0,0),                    # Cambiar los valores de los ángulos EN GRADOS para rotar el modelo en los ejes x,y,z respectivamente
+                 scale = (250,250,250))             # Cambiar los valores para agrandar el modelo en los ejes x,y,z, siendo 1,1,1 su tamaño original
 
 rend.glRender()
 
