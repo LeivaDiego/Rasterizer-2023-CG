@@ -90,10 +90,60 @@ class Renderer(object):
         if (0 <= x < self.width) and (0 <= y < self.height):
             self.pixels[x][y] = clr or self.currColor
 
-    def glTriangle(self, v0, v1, v2, clr = None):
-        self.glLine(v0, v1, clr or self.currColor)
-        self.glLine(v1, v2, clr or self.currColor)
-        self.glLine(v2, v0, clr or self.currColor)
+    def glTriangle(self, A, B, C, clr = None):
+        if A[1] < B[1]:
+            A, B = B, A
+        if A[1] < C[1]:
+            A, C = C, A
+        if B[1] < C[1]:
+            B, C = C, B
+
+        self.glLine(A, B, clr or self.currColor)
+        self.glLine(B, C, clr or self.currColor)
+        self.glLine(C, A, clr or self.currColor)
+
+        def flatBottom(vA, vB, vC):
+            try: 
+                mBA = (vB[0] - vA[0]) / (vB[1] - vA[1])
+                mCA = (vC[0] - vA[0]) / (vC[1] - vA[1])
+            except:
+                pass
+            else:
+                x0 = vB[0]
+                x1 = vC[0]
+
+                for y in range(int(vB[1]), int(vA[1])):
+                    self.glLine((x0,y),(x1,y), clr or self.currColor)
+                    x0 += mBA
+                    x1 += mCA
+        
+        def flatTop(vA, vB, vC):
+            try: 
+                mCA = (vC[0] - vA[0]) / (vC[1] - vA[1])
+                mCB = (vC[0] - vB[0]) / (vC[1] - vB[1])
+            except:
+                pass
+            else:
+                x0 = vA[0]
+                x1 = vB[0]
+
+                for y in range(int(vA[1]), int(vC[1]), -1):
+                    self.glLine((x0,y),(x1,y), clr or self.currColor)
+                    x0 -= mCA
+                    x1 -= mCB
+
+        if B[1] == C[1]:
+            # Parte plana abajo
+            flatBottom(A,B,C)
+        elif A[1] == B[1]:
+            # Parte plana arriba
+            flatTop(A,B,C)
+        else:
+            # Dibuja ambos casos con un nuevo vertice D
+            # Teorema del intercepto
+            D = (A[0] + ( (B[1] - A[1]) / (C[1] - A[1])) * (C[0] - A[0]), B[1])            
+            flatBottom(A,B,D)
+            flatTop(B,D,C)
 
     def glModelMatrix(self, translate = (0,0,0), rotate=(0,0,0),scale = (1,1,1)):
         translation = [[1,0,0,translate[0]],
@@ -238,6 +288,13 @@ class Renderer(object):
 
         for prim in primitives:
             if self.primitiveType == TRIANGLES:
+                if self.fragmentShader:
+                    primColor = self.fragmentShader()
+                    primColor = color(primColor[0],
+                                      primColor[1],
+                                      primColor[2])
+                else:
+                    primColor = self.currColor
                 self.glTriangle(prim[0],prim[1],prim[2], primColor)
 
 
