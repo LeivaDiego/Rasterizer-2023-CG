@@ -1,7 +1,16 @@
 import struct
+from math import sin, cos, radians
+from myNumpy import matrixMultiplier
 from collections import namedtuple
 
+
 V2 = namedtuple('Point2', ['x','y'])
+V3 = namedtuple('Point3',['x','y','z'])
+
+POINTS = 0
+LINES = 1
+TRIANGLES = 2
+QUADS = 3
 
 def char(c):
     # 1 byte
@@ -30,6 +39,29 @@ class Renderer(object):
 
         self.glColor(1,1,1)
 
+        self.vertexShader = None
+        self.fragmentShader = None
+
+        self.primitiveType = TRIANGLES
+        self.vertexBuffer = []
+
+    def glAddVertices(self, vertices):
+        for vert in vertices:
+            self.vertexBuffer.append(vert)
+
+    def glPrimitiveAssembly(self, tVerts):
+        primitives = []
+
+        if self.primitiveType == TRIANGLES:
+            for i in range(0, len(tVerts), 3):
+                triangle = []
+                triangle.append(tVerts[i])
+                triangle.append(tVerts[i+1])
+                triangle.append(tVerts[i+2])
+                primitives.append(triangle)
+
+        return primitives
+
     def glClearColor(self, r, g, b):
         self.clearColor = color(r,g,b)
 
@@ -48,6 +80,37 @@ class Renderer(object):
         self.glLine(v0, v1, clr or self.currColor)
         self.glLine(v1, v2, clr or self.currColor)
         self.glLine(v2, v0, clr or self.currColor)
+
+    def glModelMatrix(self, translate = (0,0,0), rotate=(0,0,0),scale = (1,1,1)):
+        translation = [[1,0,0,translate[0]],
+                     [0,1,0,translate[1]],
+                     [0,0,1,translate[2]],
+                     [0,0,0,1]]
+        
+        scaleMat = [[scale[0],0,0,0],
+                    [0,scale[1],0,0],
+                    [0,0,scale[2],0],
+                    [0,0,0,1]]
+
+        
+        rotationX = [[1,0,0,0],
+                     [0,cos(radians(rotate[0])),-sin(radians(rotate[0])),0],
+                     [0,sin(radians(rotate[0])),cos(radians(rotate[0])),0],
+                     [0,0,0,1]]
+
+        rotationY = [[cos(radians(rotate[1])),0,sin(radians(rotate[1])),0],
+                     [0,1,0,0],
+                     [-sin(radians(rotate[1])),0,cos(radians(rotate[1])),0],
+                     [0,0,0,1]]
+        
+        rotationZ = [[cos(radians(rotate[2])),-sin(radians(rotate[2])),0,0],
+                     [sin(radians(rotate[2])),cos(radians(rotate[2])),0,0],
+                     [0,0,1,0],
+                     [0,0,0,1]]
+
+        rotationMat = matrixMultiplier((matrixMultiplier(rotationX,rotationY)),rotationZ)
+
+        return matrixMultiplier(matrixMultiplier(translation,rotationMat),scaleMat)
 
     def glLine(self, v0, v1, clr = None):
         # Bresenham line algorithm
@@ -113,6 +176,32 @@ class Renderer(object):
                     y -= 1
 
                 limit += 1
+
+    def glRender(self):
+        transformedVerts = []
+
+        for vert in self.vertexBuffer:
+            if self.vertexShader:
+                transformedVerts.append(self.vertexShader(vert, modelMatrix = self.modelMatrix))
+            else:
+                transformedVerts.append(vert)
+
+        primitives = self.glPrimitiveAssembly(transformedVerts)
+
+        primColor = None
+        if self.fragmentShader:
+            primColor = self.fragmentShader()
+            primColor = color(primColor[0],
+                              primColor[1],
+                              primColor[2])
+        else:
+            primColor = self.currColor
+
+        for prim in primitives:
+            if self.primitiveType == TRIANGLES:
+                self.glTriangle(prim[0], prim[1], prim[2], primColor)
+
+
 
     def glFinish(self, filename):
         with open(filename, "wb") as file:
