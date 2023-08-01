@@ -1,6 +1,6 @@
 import struct
 from math import sin, cos, radians
-from myNumpy import matrixMultiplier
+from myNumpy import matrixMultiplier, barycentrinCoords
 from collections import namedtuple
 from obj import Obj
 
@@ -85,6 +85,8 @@ class Renderer(object):
     def glClear(self):
         self.pixels = [[self.clearColor for y in range(self.height)]
                        for x in range(self.width)]
+        self.zbuffer = [[float('inf') for y in range(self.height)]
+                        for x in range(self.width)]
 
     def glPoint(self, x, y, clr = None):
         if (0 <= x < self.width) and (0 <= y < self.height):
@@ -144,6 +146,31 @@ class Renderer(object):
             D = (A[0] + ( (B[1] - A[1]) / (C[1] - A[1])) * (C[0] - A[0]), B[1])            
             flatBottom(A,B,D)
             flatTop(B,D,C)
+
+    def glTriangle_bc(self, A, B, C):
+        self.glLine(A, B)
+        self.glLine(B, C)
+        self.glLine(C, A)
+
+        minX = round(min(A[0], B[0], C[0]))
+        maxX = round(max(A[0], B[0], C[0]))
+        minY = round(min(A[1], B[1], C[1]))
+        maxY = round(max(A[1], B[1], C[1]))
+
+        colorA = (1,0,0)
+        colorB = (0,1,0)
+        colorC = (0,0,1)
+
+        for x in range(minX, maxX + 1):
+            for y in range(minY, maxY + 1):
+                P = (x,y)
+                u, v, w = barycentrinCoords(A,B,C,P)
+
+                if 0<=u<=1 and 0<=v<=1 and 0<=w<=1:
+                    colorP = color(u * colorA[0] + v * colorB[0] + w * colorC[0],
+                                   u * colorA[1] + v * colorB[1] + w * colorC[1],
+                                   u * colorA[2] + v * colorB[2] + w * colorC[2])
+                    self.glPoint(x, y, colorP)
 
     def glModelMatrix(self, translate = (0,0,0), rotate=(0,0,0),scale = (1,1,1)):
         translation = [[1,0,0,translate[0]],
@@ -248,7 +275,7 @@ class Renderer(object):
         transformedVerts = []
 
         for model in self.objects:
-            mMat = self.glModelMatrix(model.translate,model.rotate, model.scale)
+            mMat = self.glModelMatrix(model.translate, model.rotate, model.scale)
 
             for face in model.faces:
                 vertCount = len(face)
@@ -277,25 +304,9 @@ class Renderer(object):
 
         primitives = self.glPrimitiveAssembly(transformedVerts)
 
-        primColor = None
-        if self.fragmentShader:
-            primColor = self.fragmentShader()
-            primColor = color(primColor[0],
-                              primColor[1],
-                              primColor[2])
-        else:
-            primColor = self.currColor
-
         for prim in primitives:
             if self.primitiveType == TRIANGLES:
-                if self.fragmentShader:
-                    primColor = self.fragmentShader()
-                    primColor = color(primColor[0],
-                                      primColor[1],
-                                      primColor[2])
-                else:
-                    primColor = self.currColor
-                self.glTriangle(prim[0],prim[1],prim[2], primColor)
+                self.glTriangle_bc(prim[0],prim[1],prim[2])
 
 
     def glFinish(self, filename):
