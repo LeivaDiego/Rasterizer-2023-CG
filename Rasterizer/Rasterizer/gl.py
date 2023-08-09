@@ -1,35 +1,14 @@
-import struct
 from math import sin, cos, radians
 from myNumpy import matrixMultiplier, barycentrinCoords
-from collections import namedtuple
 from obj import Obj
 from texture import Texture
+from support import *
 
-V2 = namedtuple('Point2', ['x','y'])
-V3 = namedtuple('Point3',['x','y','z'])
 
 POINTS = 0
 LINES = 1
 TRIANGLES = 2
 QUADS = 3
-
-
-def char(c):
-    # 1 byte
-    return struct.pack('=c', c.encode('ascii'))
-
-def word(w):
-    # 2 bytes
-    return struct.pack('=h', w)
-
-def dword(d):
-    # 4 bytes
-    return struct.pack('=l', d)
-
-def color(r, g, b):
-    return bytes([int(b * 255),
-                  int(g * 255),
-                  int(r * 255)])
 
 
 class Model(object):
@@ -68,23 +47,110 @@ class Renderer(object):
         self.fragmentShader = None
 
         self.primitiveType = TRIANGLES
-        self.vertexBuffer = []
 
         self.activeTexture = None
 
 
-    def glAddVertices(self, vertices):
-        for vert in vertices:
-            self.vertexBuffer.append(vert)
+
+    def glClearColor(self, r, g, b):
+        # Establecer el color de fondo
+        self.clearColor = color(r,g,b)
+
+
+
+    def glColor(self, r, g, b):
+        # Establecer el color default de rederizacion.
+        self.currColor = color(r,g,b)
+
+
+
+    def glClear(self):
+        # Se crea la tabla de pixeles de tamano width * height.
+        # Se le asigna a cada pixel el color de fondo.
+        self.pixels = [[self.clearColor for y in range(self.height)]
+                       for x in range(self.width)]
+
+        # Se crea otra tabla para el Z Buffer. Aqui se guarda la profundidad
+        # de cada pixel, con el valor maximo de profundidad inicial.
+        self.zbuffer = [[float('inf') for y in range(self.height)]
+                        for x in range(self.width)]
+
+
+
+    def glPoint(self, x, y, clr = None):
+        # Si el valor de X y Y esta dentro del ancho y alto del framebuffer,
+        # dibujar el punto en la posicion (x,y) del FrameBuffer
+        if (0 <= x < self.width) and (0 <= y < self.height):
+            self.pixels[x][y] = clr or self.currColor
+
+
+
+    def glTriangle(self, A, B, C, vtA, vtB, vtC):
+        # Rederizacion de un triangulo usando coordenadas baricentricas.
+        # Se reciben los vertices A, B y C y las coordenadas de
+        # textura vtA, vtB y vtC
+
+        # Bounding box
+        minX = round(min(A[0], B[0], C[0]))
+        maxX = round(max(A[0], B[0], C[0]))
+        minY = round(min(A[1], B[1], C[1]))
+        maxY = round(max(A[1], B[1], C[1]))
+
+        # Para cada pixel dentro del bounding box
+        for x in range(minX, maxX + 1):
+            for y in range(minY, maxY + 1):
+                # Si el pixel esta dentro del FrameBuffer
+                if (0 <= x < self.width) and (0 <= y < self.height):
+
+                    P = (x,y)
+                    bCoords = barycentrinCoords(A, B, C, P)
+
+                    # Si se obtienen coordenadas baricentricas validas para este punto
+                    if bCoords != None:
+
+                        u, v, w = bCoords
+
+                        # Se calcula el valor Z para este punto usando las coordenadas baricentricas
+                        z = u * A[2] + v * B[2] + w * C[2]
+
+                        # Si el valor de Z para este punto es menor que el valor guardado en el Z Buffer
+                        if z < self.zbuffer[x][y]:
+                            
+                            # Guardamos este valor de Z en el Z Buffer
+                            self.zbuffer[x][y] = z
+
+                            # Calcular las UVs del pixel usando las coordenadas baricentricas.
+                            uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
+                                   u * vtA[1] + v * vtB[1] + w * vtC[1])
+
+                            # Si contamos un Fragment Shader, obtener el color de ahi.
+                            # Sino, usar el color preestablecido.
+                            if self.fragmentShader != None:
+                                # Mandar los parametros necesarios al shader
+                                colorP = self.fragmentShader(texCoords = uvs,
+                                                             texture = self.activeTexture)
+
+                                self.glPoint(x, y, color(colorP[0], colorP[1], colorP[2]))
+                                
+                            else:
+                                self.glPoint(x, y)
+
 
 
     def glPrimitiveAssembly(self, tVerts, tTexCoords):
-        
+     
+        # Esta funcion construye las primitivas de acuerdo con la
+        # opcion de primitiva actual. De momento solo hay para triangulos
+
         primitives = []
 
         if self.primitiveType == TRIANGLES:
             for i in range(0, len(tVerts), 3):
+                # Un triangulo contara con las posiciones de sus vertices y
+                # y sus UVs, seguidos uno tras otro.
+                
                 triangle = []
+                
                 # Vertices
                 triangle.append( tVerts[i] )
                 triangle.append( tVerts[i + 1] )
@@ -99,119 +165,6 @@ class Renderer(object):
 
         return primitives
 
-
-    def glClearColor(self, r, g, b):
-        self.clearColor = color(r,g,b)
-
-
-    def glColor(self, r, g, b):
-        self.currColor = color(r,g,b)
-
-
-    def glClear(self):
-        self.pixels = [[self.clearColor for y in range(self.height)]
-                       for x in range(self.width)]
-
-        self.zbuffer = [[float('inf') for y in range(self.height)]
-                        for x in range(self.width)]
-
-
-    def glPoint(self, x, y, clr = None):
-        if (0 <= x < self.width) and (0 <= y < self.height):
-            self.pixels[x][y] = clr or self.currColor
-
-
-    def glTriangle(self, A, B, C, clr = None):
-        if A[1] < B[1]:
-            A, B = B, A
-        if A[1] < C[1]:
-            A, C = C, A
-        if B[1] < C[1]:
-            B, C = C, B
-
-        self.glLine(A, B, clr or self.currColor)
-        self.glLine(B, C, clr or self.currColor)
-        self.glLine(C, A, clr or self.currColor)
-
-        def flatBottom(vA, vB, vC):
-            try: 
-                mBA = (vB[0] - vA[0]) / (vB[1] - vA[1])
-                mCA = (vC[0] - vA[0]) / (vC[1] - vA[1])
-            except:
-                pass
-            else:
-                x0 = vB[0]
-                x1 = vC[0]
-
-                for y in range(int(vB[1]), int(vA[1])):
-                    self.glLine((x0,y),(x1,y), clr or self.currColor)
-                    x0 += mBA
-                    x1 += mCA
-        
-        def flatTop(vA, vB, vC):
-            try: 
-                mCA = (vC[0] - vA[0]) / (vC[1] - vA[1])
-                mCB = (vC[0] - vB[0]) / (vC[1] - vB[1])
-            except:
-                pass
-            else:
-                x0 = vA[0]
-                x1 = vB[0]
-
-                for y in range(int(vA[1]), int(vC[1]), -1):
-                    self.glLine((x0,y),(x1,y), clr or self.currColor)
-                    x0 -= mCA
-                    x1 -= mCB
-
-        if B[1] == C[1]:
-            # Parte plana abajo
-            flatBottom(A,B,C)
-        elif A[1] == B[1]:
-            # Parte plana arriba
-            flatTop(A,B,C)
-        else:
-            # Dibuja ambos casos con un nuevo vertice D
-            # Teorema del intercepto
-            D = (A[0] + ( (B[1] - A[1]) / (C[1] - A[1])) * (C[0] - A[0]), B[1])            
-            flatBottom(A,B,D)
-            flatTop(B,D,C)
-
-
-    def glTriangle_bc(self, A, B, C, vtA, vtB, vtC):
-
-        minX = round(min(A[0], B[0], C[0]))
-        maxX = round(max(A[0], B[0], C[0]))
-        minY = round(min(A[1], B[1], C[1]))
-        maxY = round(max(A[1], B[1], C[1]))
-
-        for x in range(minX, maxX + 1):
-            for y in range(minY, maxY + 1):
-                if (0 <= x < self.width) and (0 <= y < self.height):
-                    P = (x,y)
-                    bCoords = barycentrinCoords(A,B,C,P)
-
-                    if bCoords != None:
-                        u,v,w = bCoords
-                        if 0<=u<=1 and 0<=v<=1 and 0<=w<=1:
-                            # Calculo de valor profundidad del punto del triangulo
-                            z = u * A[2] + v * B[2] + w * C[2]
-
-                            if z < self.zbuffer[x][y]:
-
-                                self.zbuffer[x][y] = z
-                        
-                                uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
-                                       u * vtA[1] + v * vtB[1] + w * vtC[1])
-                        
-                                # Calculo de color
-                                if self.fragmentShader != None:
-                                    colorP = self.fragmentShader(texCoords = uvs,
-                                                                 texture = self.activeTexture)
-
-                                    self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
-
-                                else:
-                                    self.glPoint(x, y, colorP)
 
 
     def glModelMatrix(self, translate = (0,0,0), rotate=(0,0,0), scale = (1,1,1)):
@@ -252,12 +205,6 @@ class Renderer(object):
     def glLine(self, v0, v1, clr = None):
         # Bresenham line algorithm
         # y = m*x + b
-
-        #m = (v1.y - v0.y) / (v1.x - v0.x)
-        #y = v0.y
-        #for x in range(v0.x, v1.x+1):
-        #    self.glPoint(x, int(y))
-        #    y += m
 
         x0 = int(v0[0])
         x1 = int(v1[0])
@@ -315,32 +262,82 @@ class Renderer(object):
                 limit += 1
 
 
+    def glTriangle_bc(self, A, B, C, vtA, vtB, vtC):
+
+        minX = round(min(A[0], B[0], C[0]))
+        maxX = round(max(A[0], B[0], C[0]))
+        minY = round(min(A[1], B[1], C[1]))
+        maxY = round(max(A[1], B[1], C[1]))
+
+        for x in range(minX, maxX + 1):
+            for y in range(minY, maxY + 1):
+                if (0 <= x < self.width) and (0 <= y < self.height):
+                    P = (x,y)
+                    bCoords = barycentrinCoords(A,B,C,P)
+
+                    if bCoords != None:
+                        u,v,w = bCoords
+                        if 0<=u<=1 and 0<=v<=1 and 0<=w<=1:
+                            # Calculo de valor profundidad del punto del triangulo
+                            z = u * A[2] + v * B[2] + w * C[2]
+
+                            if z < self.zbuffer[x][y]:
+
+                                self.zbuffer[x][y] = z
+                        
+                                uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
+                                       u * vtA[1] + v * vtB[1] + w * vtC[1])
+                        
+                                # Calculo de color
+                                if self.fragmentShader != None:
+                                    colorP = self.fragmentShader(texCoords = uvs,
+                                                                 texture = self.activeTexture)
+
+                                    self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
+
+                                else:
+                                    self.glPoint(x, y, colorP)
+
+
+
     def glLoadModel(self, filename, textureName, translate = (0,0,0), rotate = (0,0,0), scale = (1,1,1)):
-        
+        # Se crea el modelo y le asignamos su textura
         model = Model(filename, translate, rotate, scale)
         model.LoadTexture(textureName)
 
+         # Se agrega el modelo al listado de objetos
         self.objects.append(model)
 
 
+
     def glRender(self):
+        # Esta funcion esta encargada de renderizar todo a la tabla de pixeles
         transformedVerts = []
         texCoords = []
 
+        # Para cada modelo en nuestro listado de objetos
         for model in self.objects:
 
+            # Establecemos la textura y la matriz del modelo
             self.activeTexture = model.texture
             mMat = self.glModelMatrix(model.translate, model.rotate, model.scale)
 
+            # Para cada cara del modelo
             for face in model.faces:
+                # Revisamos cuantos vertices tiene esta cara. Si tiene cuatro
+                # vertices, hay que crear un segundo triangulo por cara
                 vertCount = len(face)
-                # para los vertices
+
+                # Obtenemos los vertices de la cara actual.
                 v0 = model.vertices[ face[0][0] - 1]
                 v1 = model.vertices[ face[1][0] - 1]
                 v2 = model.vertices[ face[2][0] - 1]
                 if vertCount == 4:
                     v3 = model.vertices[face[3][0]-1]
                 
+                # Si contamos con un Vertex Shader, se manda cada vertice 
+                # al mismo para transformarlos. Recordar pasar las matrices
+                # necesarias para usarlas dentro del shader.
                 if self.vertexShader:
                     v0 = self.vertexShader(v0, modelMatrix = mMat)
                     v1 = self.vertexShader(v1, modelMatrix = mMat)
@@ -348,6 +345,7 @@ class Renderer(object):
                     if vertCount == 4:
                         v3 = self.vertexShader(v3, modelMatrix = mMat)
                 
+                # Agregar cada vertice transformado al listado de vertices.
                 transformedVerts.append(v0)
                 transformedVerts.append(v1)
                 transformedVerts.append(v2)
@@ -356,13 +354,14 @@ class Renderer(object):
                     transformedVerts.append(v2)
                     transformedVerts.append(v3)
 
-                # Para las coordenadas de textura
+                # Obtenemos las coordenadas de textura de la cara actual
                 vt0 = model.texcoords[ face[0][1] - 1]
                 vt1 = model.texcoords[ face[1][1] - 1]
                 vt2 = model.texcoords[ face[2][1] - 1]
                 if vertCount == 4:
                     vt3 = model.texcoords[face[3][1] - 1]
 
+                # Agregamos las coordenadas de textura al listado de coordenadas de textura.
                 texCoords.append(vt0)
                 texCoords.append(vt1)
                 texCoords.append(vt2)
@@ -371,9 +370,10 @@ class Renderer(object):
                     texCoords.append(vt2)
                     texCoords.append(vt3)
 
-
+        # Se crean las primitivas
         primitives = self.glPrimitiveAssembly(transformedVerts, texCoords)
 
+        # Para cada primitiva
         for prim in primitives:
             if self.primitiveType == TRIANGLES:
                 # Triangulo con coordenadas baricentricas
@@ -382,6 +382,8 @@ class Renderer(object):
 
 
     def glFinish(self, filename):
+        # Esta funcion crea una textura BMP de 24 bits y la rellena 
+        # con la tabla de pixeles. Este sera nuestro FrameBuffer final.
         with open(filename, "wb") as file:
             # Header
             file.write(char("B"))

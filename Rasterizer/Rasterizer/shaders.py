@@ -1,6 +1,9 @@
 from myNumpy import vectorXmatrix
 
 def vertexShader(vertex, **kwargs):
+
+    # El Vertex Shader se lleva a cabo por cada vértice
+    
     modelMatrix = kwargs["modelMatrix"]
 
     vt = [vertex[0],
@@ -17,6 +20,10 @@ def vertexShader(vertex, **kwargs):
     return vt
 
 def fragmentShader(**kwargs):
+
+    # El Fragment Shader se lleva a cabo por cada pixel
+    # que se renderizará en la pantalla.
+
     texCoords = kwargs["texCoords"]
     texture = kwargs["texture"]
 

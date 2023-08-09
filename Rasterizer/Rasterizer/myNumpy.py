@@ -1,3 +1,5 @@
+from math import isclose
+
 def matrixMultiplier(matrixA, matrixB):
     # Filas y columnas de cada matriz
     rowsA = len(matrixA)
@@ -19,7 +21,6 @@ def matrixMultiplier(matrixA, matrixB):
         return matrixC
     else:
         return None
-
 
 
 def vectorXmatrix(matrix, vector):
@@ -44,16 +45,36 @@ def vectorXmatrix(matrix, vector):
 
 def barycentrinCoords(A, B, C, P):
     
-    areaPCB = (B[1] - C[1]) * (P[0] - C[0]) + (C[0] - B[0]) * (P[1] - C[1])
-    
-    areaACP = (C[1] - A[1]) * (P[0] - C[0]) + (A[0] - C[0]) * (P[1] - C[1])
-    
-    areaABC = (B[1] - C[1]) * (A[0] - C[0]) + (C[0] - B[0]) * (A[1] - C[1])
+    # Se saca el area de los subtriangulos y del triangulo
+    # mayor usando el Shoelace Theorem, una formula que permite
+    # sacar el area de un poligono de cualquier cantidad de vertices.
 
-    try:
-        u = areaPCB / areaABC
-        v = areaACP / areaABC
-        w = 1 - u - v 
-        return u, v, w
-    except:
-        return -1,-1,-1
+    areaPCB = abs((P[0]*C[1] + C[0]*B[1] + B[0]*P[1]) - 
+                  (P[1]*C[0] + C[1]*B[0] + B[1]*P[0]))
+
+    areaACP = abs((A[0]*C[1] + C[0]*P[1] + P[0]*A[1]) - 
+                  (A[1]*C[0] + C[1]*P[0] + P[1]*A[0]))
+
+    areaABP = abs((A[0]*B[1] + B[0]*P[1] + P[0]*A[1]) - 
+                  (A[1]*B[0] + B[1]*P[0] + P[1]*A[0]))
+
+    areaABC = abs((A[0]*B[1] + B[0]*C[1] + C[0]*A[1]) - 
+                  (A[1]*B[0] + B[1]*C[0] + C[1]*A[0]))
+
+    # Si el area del triangulo es 0, retornar nada para
+    # prevenir division por 0.
+    if areaABC == 0:
+        return None
+
+    # Determinar las coordenadas baricentricas dividiendo el 
+    # area de cada subtriangulo por el area del triangulo mayor.
+    u = areaPCB / areaABC
+    v = areaACP / areaABC
+    w = areaABP / areaABC
+
+    # Si cada coordenada esta entre 0 a 1 y la suma de las tres
+    # es igual a 1, entonces son validas.
+    if 0<=u<=1 and 0<=v<=1 and 0<=w<=1 and isclose(u+v+w, 1.0):
+        return (u, v, w)
+    else:
+        return None
