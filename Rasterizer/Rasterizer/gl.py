@@ -1,9 +1,10 @@
-from math import sin, cos, radians
-from myNumpy import matrixMultiplier, barycentrinCoords
+from math import pi, sin, cos, tan, radians
+from turtle import forward
+from myNumpy import barycentricCoords
 from obj import Obj
 from texture import Texture
 from support import *
-
+import numpy as np
 
 POINTS = 0
 LINES = 1
@@ -50,6 +51,9 @@ class Renderer(object):
 
         self.activeTexture = None
 
+        self.glViewPort(0,0,self.width, self.height)
+        self.glCamMatrix()
+        self.glProjectionMatrix()
 
 
     def glClearColor(self, r, g, b):
@@ -103,7 +107,7 @@ class Renderer(object):
                 if (0 <= x < self.width) and (0 <= y < self.height):
 
                     P = (x,y)
-                    bCoords = barycentrinCoords(A, B, C, P)
+                    bCoords = barycentricCoords(A, B, C, P)
 
                     # Si se obtienen coordenadas baricentricas validas para este punto
                     if bCoords != None:
@@ -167,40 +171,106 @@ class Renderer(object):
 
 
 
+    def glViewPort(self, x, y, width, height):
+        self.vpX = x
+        self.vpY = y
+        self.vpWidth = width
+        self.vpHeight = height
+
+        self.vpMatrix = np.matrix([[self.vpWidth/2, 0, 0, self.vpX + self.vpWidth/2],
+                         [0, self.vpHeight/2, 0, self.vpY + self.vpHeight/2],
+                         [0, 0, 0.5, 0.5],
+                         [0, 0, 0, 1]])
+
+
+
+    def glCamMatrix(self, translate = (0,0,0), rotate=(0,0,0)):
+        # Crea uina matrix de camara
+        self.camMatrix = self.glModelMatrix(translate, rotate)
+
+        # La matriz de vista es igual a la inversa de la camara
+        self.viewMatrix = np.linalg.inv(self.camMatrix)
+
+
+
+    def glLookAt(self, camPos = (0,0,0), eyePos = (0,0,0)):
+
+        worldUp = (0,1,0)
+
+        forward = np.subtract(camPos, eyePos)
+        forward = forward / np.linalg.norm(forward)
+
+        right = np.cross(worldUp, forward)
+        right = right / np.linalg.norm(right)
+
+        up = np.cross(forward, right)
+        up = up / np.linalg.norm(up)
+
+        self.camMatrix = np.matrix([[right[0],up[0],forward[0],camPos[0]],
+                                    [right[1],up[1],forward[1],camPos[1]],
+                                    [right[2],up[2],forward[2],camPos[2]],
+                                    [0,0,0,1]])
+
+        self.viewMatrix = np.linalg.inv(self.camMatrix)
+
+    def glProjectionMatrix(self, fov = 60, n = 0.1, f = 1000):
+
+        aspectRatio = self.vpWidth / self.vpHeight
+
+        t = tan( radians(fov) / 2) * n
+        r = t * aspectRatio
+
+        self.projectionMatrix = np.matrix([[n/r,0,0,0],
+                                 [0,n/t,0,0],
+                                 [0,0,-(f+n)/(f-n),-2*f*n/(f-n)],
+                                 [0,0,-1,0]])
+
+
+
     def glModelMatrix(self, translate = (0,0,0), rotate=(0,0,0), scale = (1,1,1)):
         
         # Traslacion
-        translation = [[1,0,0,translate[0]],
-                     [0,1,0,translate[1]],
-                     [0,0,1,translate[2]],
-                     [0,0,0,1]]
+        translation = np.matrix([[1,0,0,translate[0]],
+                       [0,1,0,translate[1]],
+                       [0,0,1,translate[2]],
+                       [0,0,0,1]])
         
         # Escala
-        scaleMat = [[scale[0],0,0,0],
+        scaleMat = np.matrix([[scale[0],0,0,0],
                     [0,scale[1],0,0],
                     [0,0,scale[2],0],
-                    [0,0,0,1]]
+                    [0,0,0,1]])
 
         #Rotacion
-        rotationX = [[1,0,0,0],
-                     [0,cos(radians(rotate[0])),-sin(radians(rotate[0])),0],
-                     [0,sin(radians(rotate[0])),cos(radians(rotate[0])),0],
-                     [0,0,0,1]]
+        rotationMat = self.glRotationMatrix(rotate[0],rotate[1],rotate[2])
 
-        rotationY = [[cos(radians(rotate[1])),0,sin(radians(rotate[1])),0],
-                     [0,1,0,0],
-                     [-sin(radians(rotate[1])),0,cos(radians(rotate[1])),0],
-                     [0,0,0,1]]
+        return translation * rotationMat * scaleMat
+
+    def glRotationMatrix(self, pitch = 0, yaw = 0, roll = 0):
+        # Convertir a radianes
+        pitch *= pi/180
+        yaw *= pi/180
+        roll *= pi/180
+
+        # Creamos la matriz de rotación para cada eje.
+        pitchMat = np.matrix([[1,0,0,0],
+                    [0,cos(pitch),-sin(pitch),0],
+                    [0,sin(pitch),cos(pitch),0],
+                    [0,0,0,1]])
+
+        yawMat = np.matrix([[cos(yaw),0,sin(yaw),0],
+                  [0,1,0,0],
+                  [-sin(yaw),0,cos(yaw),0],
+                  [0,0,0,1]])
+
+        rollMat = np.matrix([[cos(roll),-sin(roll),0,0],
+                   [sin(roll),cos(roll),0,0],
+                   [0,0,1,0],
+                   [0,0,0,1]])
+
+        # Se multiplican las tres matrices para obtener la matriz de rotación final
+        return pitchMat* yawMat * rollMat
         
-        rotationZ = [[cos(radians(rotate[2])),-sin(radians(rotate[2])),0,0],
-                     [sin(radians(rotate[2])),cos(radians(rotate[2])),0,0],
-                     [0,0,1,0],
-                     [0,0,0,1]]
-
-        rotationMat = matrixMultiplier((matrixMultiplier(rotationX,rotationY)),rotationZ)
-
-        return matrixMultiplier(matrixMultiplier(translation,rotationMat),scaleMat)
-
 
     def glLine(self, v0, v1, clr = None):
         # Bresenham line algorithm
@@ -262,6 +332,7 @@ class Renderer(object):
                 limit += 1
 
 
+
     def glTriangle_bc(self, A, B, C, vtA, vtB, vtC):
 
         minX = round(min(A[0], B[0], C[0]))
@@ -273,7 +344,7 @@ class Renderer(object):
             for y in range(minY, maxY + 1):
                 if (0 <= x < self.width) and (0 <= y < self.height):
                     P = (x,y)
-                    bCoords = barycentrinCoords(A,B,C,P)
+                    bCoords = barycentricCoords(A,B,C,P)
 
                     if bCoords != None:
                         u,v,w = bCoords
@@ -339,11 +410,29 @@ class Renderer(object):
                 # al mismo para transformarlos. Recordar pasar las matrices
                 # necesarias para usarlas dentro del shader.
                 if self.vertexShader:
-                    v0 = self.vertexShader(v0, modelMatrix = mMat)
-                    v1 = self.vertexShader(v1, modelMatrix = mMat)
-                    v2 = self.vertexShader(v2, modelMatrix = mMat)
+                    v0 = self.vertexShader(v0, 
+                                           modelMatrix = mMat,
+                                           viewMatrix = self.viewMatrix,
+                                           projectionMatrix = self.projectionMatrix,
+                                           vpMatrix = self.vpMatrix)
+
+                    v1 = self.vertexShader(v1, 
+                                           modelMatrix = mMat,
+                                           viewMatrix = self.viewMatrix,
+                                           projectionMatrix = self.projectionMatrix,
+                                           vpMatrix = self.vpMatrix)
+
+                    v2 = self.vertexShader(v2, 
+                                           modelMatrix = mMat,
+                                           viewMatrix = self.viewMatrix,
+                                           projectionMatrix = self.projectionMatrix,
+                                           vpMatrix = self.vpMatrix)
                     if vertCount == 4:
-                        v3 = self.vertexShader(v3, modelMatrix = mMat)
+                        v3 = self.vertexShader(v3, 
+                                               modelMatrix = mMat,
+                                               viewMatrix = self.viewMatrix,
+                                               projectionMatrix = self.projectionMatrix,
+                                               vpMatrix = self.vpMatrix)
                 
                 # Agregar cada vertice transformado al listado de vertices.
                 transformedVerts.append(v0)
@@ -379,6 +468,7 @@ class Renderer(object):
                 # Triangulo con coordenadas baricentricas
                 self.glTriangle_bc(prim[0], prim[1], prim[2],
                                    prim[3], prim[4], prim[5])
+
 
 
     def glFinish(self, filename):
