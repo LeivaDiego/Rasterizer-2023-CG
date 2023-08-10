@@ -13,25 +13,59 @@ rend = Renderer(width, height)
 rend.vertexShader = shaders.vertexShader
 rend.fragmentShader = shaders.fragmentShader
 
-# metodo look At
-rend.glLookAt(camPos=(2, 0, 0),
-              eyePos=(0, 0, -5))
 
 
-# Cargar el modelo en el renderizador
- 
+## Medium Shot
+#rend.glLookAt(camPos=(2, 0, 0),
+#              eyePos=(0, 0, -5))
 
-rend.glLoadModel(filename = "model.obj",              
-                 textureName = "model.bmp",           
-                 translate = (0,0,-5),                
-                 rotate = (0,0,0),                    
-                 scale = (2,2,2))
 
+#rend.glLoadModel(filename = "model.obj",              
+#                 textureName = "model.bmp",           
+#                 translate = (0,0,-5),                
+#                 rotate = (0,0,0),                    
+#                 scale = (2,2,2))
 
 
 
-# Renderizar el modelo en la imagen
+# Low Angle
+#rend.glLookAt(camPos=(1, -3, 0),
+#              eyePos=(0, 0, -5))
+
+
+#rend.glLoadModel(filename = "model.obj",              
+#                 textureName = "model.bmp",           
+#                 translate = (0,0,-5),                
+#                 rotate = (0,0,0),                    
+#                 scale = (2,2,2))
+
+
+## High Angle
+#rend.glLookAt(camPos=(-2, 3, 0),
+#              eyePos=(0, 0, -5))
+
+
+#rend.glLoadModel(filename = "model.obj",              
+#                 textureName = "model.bmp",           
+#                 translate = (0,0,-5),                
+#                 rotate = (0,0,0),                    
+#                 scale = (2,2,2))
+
+
+
+
+## Dutch Angle
+#rend.glLookAt(camPos=(-2, -1, 0),
+#              eyePos=(0, 0, -5))
+
+
+#rend.glLoadModel(filename = "model.obj",              
+#                 textureName = "model.bmp",           
+#                 translate = (0,0,-5),                
+#                 rotate = (0,0,25),                    
+#                 scale = (2,2,2))
+
 rend.glRender()
 
-# Se crea el FrameBuffer con la imagen renderizada
 rend.glFinish("output.bmp")
+
