@@ -1,17 +1,16 @@
 # Rasterizer-2023-CG
 
-### NOTA
-El modelo contaba con mas de 6 texturas por lo que hay "partes" que se ven incompletas
-(las garras, espinas, y ojos)
-
 ## Entrega R3
 Los archivos de la entrega "R3: Cameras", se encuentra en la branch llamada R3
 En ella se encuentran 4 archivo: output1.bmp, output2.bmp, output3.bmp, output4.bmp
 En donde esta cada una de las 4 tomas solicitadas del modelo.
 
-El archivo original de textura no esta dentro del repositorio ya que excede los 100MB que Github permite
-entonces adjunto el enlace de drive donde se encuentra la textura:
-https://drive.google.com/file/d/1tg8V8eVIiLKxMteFvD0xKuxnii1opDxC/view?usp=drive_link
+### NOTA
+Me disculpo por haber hecho los commits un tanto despues de la hora de entrega, pero la razon es que 
+el modelo original que estaba utilizando tenia una cantidad muy grande de poligonos, era un Indominus Rex,
+por lo que fue practicamente imposible intentar renderizarlo, tomo un par de horas para completarse uno solo.
+Asi que me vi obligado a buscar otro modelo menos complejo. Sin embargo, tuve dificultad para encontrar uno
+adecuado ya que todos tenian algun mal formato y no se podian renderizar.
 
 
 ## Entrega R2
