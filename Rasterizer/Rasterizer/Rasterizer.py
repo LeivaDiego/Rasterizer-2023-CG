@@ -13,12 +13,10 @@ rend = Renderer(width, height)
 rend.vertexShader = shaders.vertexShader
 rend.fragmentShader = shaders.fragmentShader
 
-rend.glLookAt(camPos=(-3, -1,0),
+# metodo look At
+rend.glLookAt(camPos=(2, 0, 0),
               eyePos=(0, 0, -5))
 
-
-# Movimiento de camara
-# rend.glCamMatrix(translate= (0,0,0))
 
 # Cargar el modelo en el renderizador
  

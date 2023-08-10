@@ -1,7 +1,10 @@
 
+from myNumpy import matrix_multiplier, matrix_vector_multiplier
+
+
 def vertexShader(vertex, **kwargs):
 
-    # El Vertex Shader se lleva a cabo por cada vértice
+    # El Vertex Shader se lleva a cabo por cada vï¿½rtice
     
     modelMatrix = kwargs["modelMatrix"]
     viewMatrix = kwargs["viewMatrix"]
@@ -13,9 +16,11 @@ def vertexShader(vertex, **kwargs):
           vertex[2],
           1]
 
-    vt =  vpMatrix * projectionMatrix * viewMatrix * modelMatrix @ vt
+    temp1 = matrix_multiplier(vpMatrix, projectionMatrix)
+    temp2 = matrix_multiplier(temp1, viewMatrix)
+    temp3 = matrix_multiplier(temp2, modelMatrix)
 
-    vt = vt.tolist()[0]
+    vt =  matrix_vector_multiplier(temp3, vt)
 
     vt = [vt[0]/vt[3],
           vt[1]/vt[3],
@@ -26,7 +31,7 @@ def vertexShader(vertex, **kwargs):
 def fragmentShader(**kwargs):
 
     # El Fragment Shader se lleva a cabo por cada pixel
-    # que se renderizará en la pantalla.
+    # que se renderizarï¿½ en la pantalla.
 
     texCoords = kwargs["texCoords"]
     texture = kwargs["texture"]

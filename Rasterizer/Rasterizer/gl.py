@@ -1,10 +1,11 @@
+from logging.handlers import RotatingFileHandler
 from math import pi, sin, cos, tan, radians
-from turtle import forward
-from myNumpy import barycentricCoords
+from myNumpy import barycentricCoords, cross_product, inverse_matrix, matrix_multiplier, subtract_vector, vector_normalize
 from obj import Obj
 from texture import Texture
 from support import *
 import numpy as np
+
 
 POINTS = 0
 LINES = 1
@@ -39,7 +40,6 @@ class Renderer(object):
 
         self.glClearColor(0,0,0)
         self.glClear()
-
         self.glColor(1,1,1)
 
         self.objects = []
@@ -49,11 +49,14 @@ class Renderer(object):
 
         self.primitiveType = TRIANGLES
 
+        self.vertexBuffer = []
+
         self.activeTexture = None
 
         self.glViewPort(0,0,self.width, self.height)
         self.glCamMatrix()
         self.glProjectionMatrix()
+
 
 
     def glClearColor(self, r, g, b):
@@ -72,7 +75,7 @@ class Renderer(object):
         # Se crea la tabla de pixeles de tamano width * height.
         # Se le asigna a cada pixel el color de fondo.
         self.pixels = [[self.clearColor for y in range(self.height)]
-                       for x in range(self.width)]
+                        for x in range(self.width)]
 
         # Se crea otra tabla para el Z Buffer. Aqui se guarda la profundidad
         # de cada pixel, con el valor maximo de profundidad inicial.
@@ -132,7 +135,7 @@ class Renderer(object):
                             if self.fragmentShader != None:
                                 # Mandar los parametros necesarios al shader
                                 colorP = self.fragmentShader(texCoords = uvs,
-                                                             texture = self.activeTexture)
+                                                                texture = self.activeTexture)
 
                                 self.glPoint(x, y, color(colorP[0], colorP[1], colorP[2]))
                                 
@@ -177,19 +180,19 @@ class Renderer(object):
         self.vpWidth = width
         self.vpHeight = height
 
-        self.vpMatrix = np.matrix([[self.vpWidth/2, 0, 0, self.vpX + self.vpWidth/2],
+        self.vpMatrix = [[self.vpWidth/2, 0, 0, self.vpX + self.vpWidth/2],
                          [0, self.vpHeight/2, 0, self.vpY + self.vpHeight/2],
                          [0, 0, 0.5, 0.5],
-                         [0, 0, 0, 1]])
+                         [0, 0, 0, 1]]
 
 
 
     def glCamMatrix(self, translate = (0,0,0), rotate=(0,0,0)):
-        # Crea uina matrix de camara
+        # Crea una matriz de camara
         self.camMatrix = self.glModelMatrix(translate, rotate)
 
         # La matriz de vista es igual a la inversa de la camara
-        self.viewMatrix = np.linalg.inv(self.camMatrix)
+        self.viewMatrix = inverse_matrix(self.camMatrix)
 
 
 
@@ -197,21 +200,21 @@ class Renderer(object):
 
         worldUp = (0,1,0)
 
-        forward = np.subtract(camPos, eyePos)
-        forward = forward / np.linalg.norm(forward)
+        forward = subtract_vector(camPos, eyePos)
+        forward = vector_normalize(forward)
 
-        right = np.cross(worldUp, forward)
-        right = right / np.linalg.norm(right)
+        right = cross_product(worldUp, forward)
+        right = vector_normalize(right)
 
-        up = np.cross(forward, right)
-        up = up / np.linalg.norm(up)
+        up = cross_product(forward, right)
+        up = vector_normalize(up)
 
-        self.camMatrix = np.matrix([[right[0],up[0],forward[0],camPos[0]],
-                                    [right[1],up[1],forward[1],camPos[1]],
-                                    [right[2],up[2],forward[2],camPos[2]],
-                                    [0,0,0,1]])
+        self.camMatrix = [[right[0],up[0],forward[0],camPos[0]],
+                          [right[1],up[1],forward[1],camPos[1]],
+                          [right[2],up[2],forward[2],camPos[2]],
+                          [0,0,0,1]]
 
-        self.viewMatrix = np.linalg.inv(self.camMatrix)
+        self.viewMatrix = inverse_matrix(self.camMatrix)
 
     def glProjectionMatrix(self, fov = 60, n = 0.1, f = 1000):
 
@@ -220,31 +223,33 @@ class Renderer(object):
         t = tan( radians(fov) / 2) * n
         r = t * aspectRatio
 
-        self.projectionMatrix = np.matrix([[n/r,0,0,0],
+        self.projectionMatrix = [[n/r,0,0,0],
                                  [0,n/t,0,0],
                                  [0,0,-(f+n)/(f-n),-2*f*n/(f-n)],
-                                 [0,0,-1,0]])
+                                 [0,0,-1,0]]
 
 
 
     def glModelMatrix(self, translate = (0,0,0), rotate=(0,0,0), scale = (1,1,1)):
         
         # Traslacion
-        translation = np.matrix([[1,0,0,translate[0]],
-                       [0,1,0,translate[1]],
-                       [0,0,1,translate[2]],
-                       [0,0,0,1]])
+        translationMat = [[1,0,0,translate[0]],
+                        [0,1,0,translate[1]],
+                        [0,0,1,translate[2]],
+                        [0,0,0,1]]
         
         # Escala
-        scaleMat = np.matrix([[scale[0],0,0,0],
+        scaleMat = [[scale[0],0,0,0],
                     [0,scale[1],0,0],
                     [0,0,scale[2],0],
-                    [0,0,0,1]])
+                    [0,0,0,1]]
 
         #Rotacion
         rotationMat = self.glRotationMatrix(rotate[0],rotate[1],rotate[2])
 
-        return translation * rotationMat * scaleMat
+        transformation_matrix =  matrix_multiplier((matrix_multiplier(translationMat, rotationMat)), scaleMat)
+        
+        return transformation_matrix
 
     def glRotationMatrix(self, pitch = 0, yaw = 0, roll = 0):
         # Convertir a radianes
@@ -252,24 +257,24 @@ class Renderer(object):
         yaw *= pi/180
         roll *= pi/180
 
-        # Creamos la matriz de rotación para cada eje.
-        pitchMat = np.matrix([[1,0,0,0],
+        # Creamos la matriz de rotaciï¿½n para cada eje.
+        pitchMat = [[1,0,0,0],
                     [0,cos(pitch),-sin(pitch),0],
                     [0,sin(pitch),cos(pitch),0],
-                    [0,0,0,1]])
+                    [0,0,0,1]]
 
-        yawMat = np.matrix([[cos(yaw),0,sin(yaw),0],
-                  [0,1,0,0],
-                  [-sin(yaw),0,cos(yaw),0],
-                  [0,0,0,1]])
+        yawMat = [[cos(yaw),0,sin(yaw),0],
+                    [0,1,0,0],
+                    [-sin(yaw),0,cos(yaw),0],
+                    [0,0,0,1]]
 
-        rollMat = np.matrix([[cos(roll),-sin(roll),0,0],
+        rollMat = [[cos(roll),-sin(roll),0,0],
                    [sin(roll),cos(roll),0,0],
                    [0,0,1,0],
-                   [0,0,0,1]])
+                   [0,0,0,1]]
 
-        # Se multiplican las tres matrices para obtener la matriz de rotación final
-        return pitchMat* yawMat * rollMat
+        # Se multiplican las tres matrices para obtener la matriz de rotaciï¿½n final
+        return matrix_multiplier(matrix_multiplier(pitchMat, yawMat), rollMat)
         
 
     def glLine(self, v0, v1, clr = None):
@@ -357,12 +362,12 @@ class Renderer(object):
                                 self.zbuffer[x][y] = z
                         
                                 uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
-                                       u * vtA[1] + v * vtB[1] + w * vtC[1])
+                                        u * vtA[1] + v * vtB[1] + w * vtC[1])
                         
                                 # Calculo de color
                                 if self.fragmentShader != None:
                                     colorP = self.fragmentShader(texCoords = uvs,
-                                                                 texture = self.activeTexture)
+                                                                    texture = self.activeTexture)
 
                                     self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
 
@@ -376,7 +381,7 @@ class Renderer(object):
         model = Model(filename, translate, rotate, scale)
         model.LoadTexture(textureName)
 
-         # Se agrega el modelo al listado de objetos
+            # Se agrega el modelo al listado de objetos
         self.objects.append(model)
 
 
@@ -411,28 +416,28 @@ class Renderer(object):
                 # necesarias para usarlas dentro del shader.
                 if self.vertexShader:
                     v0 = self.vertexShader(v0, 
-                                           modelMatrix = mMat,
-                                           viewMatrix = self.viewMatrix,
-                                           projectionMatrix = self.projectionMatrix,
-                                           vpMatrix = self.vpMatrix)
+                                            modelMatrix = mMat,
+                                            viewMatrix = self.viewMatrix,
+                                            projectionMatrix = self.projectionMatrix,
+                                            vpMatrix = self.vpMatrix)
 
                     v1 = self.vertexShader(v1, 
-                                           modelMatrix = mMat,
-                                           viewMatrix = self.viewMatrix,
-                                           projectionMatrix = self.projectionMatrix,
-                                           vpMatrix = self.vpMatrix)
+                                            modelMatrix = mMat,
+                                            viewMatrix = self.viewMatrix,
+                                            projectionMatrix = self.projectionMatrix,
+                                            vpMatrix = self.vpMatrix)
 
                     v2 = self.vertexShader(v2, 
-                                           modelMatrix = mMat,
-                                           viewMatrix = self.viewMatrix,
-                                           projectionMatrix = self.projectionMatrix,
-                                           vpMatrix = self.vpMatrix)
+                                            modelMatrix = mMat,
+                                            viewMatrix = self.viewMatrix,
+                                            projectionMatrix = self.projectionMatrix,
+                                            vpMatrix = self.vpMatrix)
                     if vertCount == 4:
                         v3 = self.vertexShader(v3, 
-                                               modelMatrix = mMat,
-                                               viewMatrix = self.viewMatrix,
-                                               projectionMatrix = self.projectionMatrix,
-                                               vpMatrix = self.vpMatrix)
+                                                modelMatrix = mMat,
+                                                viewMatrix = self.viewMatrix,
+                                                projectionMatrix = self.projectionMatrix,
+                                                vpMatrix = self.vpMatrix)
                 
                 # Agregar cada vertice transformado al listado de vertices.
                 transformedVerts.append(v0)
@@ -467,7 +472,7 @@ class Renderer(object):
             if self.primitiveType == TRIANGLES:
                 # Triangulo con coordenadas baricentricas
                 self.glTriangle_bc(prim[0], prim[1], prim[2],
-                                   prim[3], prim[4], prim[5])
+                                    prim[3], prim[4], prim[5])
 
 
 
