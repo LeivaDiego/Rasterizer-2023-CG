@@ -27,7 +27,6 @@ rend.fragmentShader = shaders.fragmentShader
 #                 scale = (8,8,8))
 
 
-
 # Low Angle
 #rend.glLookAt(camPos=(1, -5, 0),
 #              eyePos=(0, 0, -5))
@@ -41,31 +40,29 @@ rend.fragmentShader = shaders.fragmentShader
 
 
 ## High Angle
-rend.glLookAt(camPos=(0, 9, 0),
+#rend.glLookAt(camPos=(0, 9, 0),
+#              eyePos=(0, 0, -5))
+
+
+#rend.glLoadModel(filename = "pot.obj",              
+#                 textureName = "pot.bmp",           
+#                 translate = (0,-2,-3),                
+#                 rotate = (0,0,0),                    
+#                 scale = (12,12,12))
+
+
+## Dutch Angle
+rend.glLookAt(camPos=(-1, 4, 0),
               eyePos=(0, 0, -5))
 
 
 rend.glLoadModel(filename = "pot.obj",              
                  textureName = "pot.bmp",           
-                 translate = (0,-2,-3),                
-                 rotate = (0,0,0),                    
-                 scale = (12,12,12))
-
-
-
-
-## Dutch Angle
-#rend.glLookAt(camPos=(-2, -1, 0),
-#              eyePos=(0, 0, -5))
-
-
-#rend.glLoadModel(filename = "model.obj",              
-#                 textureName = "model.bmp",           
-#                 translate = (0,0,-5),                
-#                 rotate = (0,0,25),                    
-#                 scale = (2,2,2))
+                 translate = (1,-2,-5),                
+                 rotate = (0,0,35),                    
+                 scale = (10,10,10))
 
 rend.glRender()
 
-rend.glFinish("output3.bmp")
+rend.glFinish("output4.bmp")
 
