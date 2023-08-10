@@ -29,27 +29,27 @@ rend.fragmentShader = shaders.fragmentShader
 
 
 # Low Angle
-rend.glLookAt(camPos=(1, -5, 0),
+#rend.glLookAt(camPos=(1, -5, 0),
+#              eyePos=(0, 0, -5))
+
+
+#rend.glLoadModel(filename = "pot.obj",              
+#                 textureName = "pot.bmp",           
+#                 translate = (0,-1,-5),                
+#                 rotate = (0,0,0),                    
+#                 scale = (10,10,10))
+
+
+## High Angle
+rend.glLookAt(camPos=(0, 9, 0),
               eyePos=(0, 0, -5))
 
 
 rend.glLoadModel(filename = "pot.obj",              
                  textureName = "pot.bmp",           
-                 translate = (0,-1,-5),                
+                 translate = (0,-2,-3),                
                  rotate = (0,0,0),                    
-                 scale = (10,10,10))
-
-
-## High Angle
-#rend.glLookAt(camPos=(-2, 3, 0),
-#              eyePos=(0, 0, -5))
-
-
-#rend.glLoadModel(filename = "model.obj",              
-#                 textureName = "model.bmp",           
-#                 translate = (0,0,-5),                
-#                 rotate = (0,0,0),                    
-#                 scale = (2,2,2))
+                 scale = (12,12,12))
 
 
 
@@ -67,5 +67,5 @@ rend.glLoadModel(filename = "pot.obj",
 
 rend.glRender()
 
-rend.glFinish("output2.bmp")
+rend.glFinish("output3.bmp")
 
