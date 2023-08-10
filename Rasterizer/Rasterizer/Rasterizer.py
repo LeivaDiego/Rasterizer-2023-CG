@@ -3,8 +3,8 @@ from obj import Obj
 from gl import Renderer
 
 # La resolucion de la imagen generada
-width = 960    # Ancho en pixeles
-height = 540   # Alto en pixeles
+width = 1920    # Ancho en pixeles
+height = 1080   # Alto en pixeles
 
 # Inicializar el Renderer con la resolucion definida
 rend = Renderer(width, height)
@@ -16,15 +16,15 @@ rend.fragmentShader = shaders.fragmentShader
 
 
 ## Medium Shot
-#rend.glLookAt(camPos=(2, 0, 0),
-#              eyePos=(0, 0, -5))
+rend.glLookAt(camPos=(2, 0, 0),
+              eyePos=(0, 0, -5))
 
 
-#rend.glLoadModel(filename = "model.obj",              
-#                 textureName = "model.bmp",           
-#                 translate = (0,0,-5),                
-#                 rotate = (0,0,0),                    
-#                 scale = (2,2,2))
+rend.glLoadModel(filename = "Model.obj",              
+                 textureName = "Model.bmp",           
+                 translate = (0,0,-5),                
+                 rotate = (0,0,0),                    
+                 scale = (2,2,2))
 
 
 
