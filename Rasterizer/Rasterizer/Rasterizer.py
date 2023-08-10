@@ -41,29 +41,29 @@ rend.fragmentShader = shaders.fragmentShader
 
 
 ## High Angle
-rend.glLookAt(camPos=(-2, 3, 0),
-              eyePos=(0, 0, -5))
-
-
-rend.glLoadModel(filename = "model.obj",              
-                 textureName = "model.bmp",           
-                 translate = (0,0,-5),                
-                 rotate = (0,0,0),                    
-                 scale = (2,2,2))
-
-
-
-
-## Dutch Angle
-#rend.glLookAt(camPos=(-2, -1, 0),
+#rend.glLookAt(camPos=(-2, 3, 0),
 #              eyePos=(0, 0, -5))
 
 
 #rend.glLoadModel(filename = "model.obj",              
 #                 textureName = "model.bmp",           
 #                 translate = (0,0,-5),                
-#                 rotate = (0,0,25),                    
+#                 rotate = (0,0,0),                    
 #                 scale = (2,2,2))
+
+
+
+
+## Dutch Angle
+rend.glLookAt(camPos=(-2, -1, 0),
+              eyePos=(0, 0, -5))
+
+
+rend.glLoadModel(filename = "model.obj",              
+                 textureName = "model.bmp",           
+                 translate = (0,0,-5),                
+                 rotate = (0,0,25),                    
+                 scale = (2,2,2))
 
 rend.glRender()
 
