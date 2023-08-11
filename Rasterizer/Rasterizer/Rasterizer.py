@@ -22,7 +22,7 @@ rend.glLookAt(camPos=(2, 0, 0),
  
 
 rend.glLoadModel(filename = "model.obj",              
-                 textureName = "model.bmp",           
+                 textureNames = ["model.bmp", "stone.bmp"],           
                  translate = (0,0,-5),                
                  rotate = (0,0,0),                    
                  scale = (2,2,2))

@@ -28,17 +28,38 @@ def vertexShader(vertex, **kwargs):
 
     return vt
 
+#def fragmentShader(**kwargs):
+
+#    # El Fragment Shader se lleva a cabo por cada pixel
+#    # que se renderizar� en la pantalla.
+
+#    texCoords = kwargs["texCoords"]
+#    texture = kwargs["texture"]
+
+#    if texture != None:
+#        color = texture.getColor(texCoords[0], texCoords[1])
+#    else:
+#        color = (1,1,1)
+
+#    return color
+
+
 def fragmentShader(**kwargs):
-
-    # El Fragment Shader se lleva a cabo por cada pixel
-    # que se renderizar� en la pantalla.
-
     texCoords = kwargs["texCoords"]
-    texture = kwargs["texture"]
+    textures = kwargs["textures"] # Lista de texturas
 
-    if texture != None:
-        color = texture.getColor(texCoords[0], texCoords[1])
-    else:
-        color = (1,1,1)
+    color_final = [0, 0, 0]
 
-    return color
+    # Iterar sobre cada textura y combinar su color (por ejemplo, promedio)
+    for texture in textures:
+        if texture != None:
+            color = texture.getColor(texCoords[0], texCoords[1])
+            color_final[0] += color[0]
+            color_final[1] += color[1]
+            color_final[2] += color[2]
+
+    color_final[0] /= len(textures)
+    color_final[1] /= len(textures)
+    color_final[2] /= len(textures)
+
+    return color_final

@@ -1,10 +1,8 @@
-from logging.handlers import RotatingFileHandler
 from math import pi, sin, cos, tan, radians
 from myNumpy import barycentricCoords, cross_product, inverse_matrix, matrix_multiplier, subtract_vector, vector_normalize
 from obj import Obj
 from texture import Texture
 from support import *
-import numpy as np
 
 
 POINTS = 0
@@ -27,9 +25,16 @@ class Model(object):
         self.rotate = rotate
         self.scale = scale
 
+        self.textures = []
+        self.currTexIndex = 0
 
-    def LoadTexture(self, textureName):
-        self.texture = Texture(textureName)
+
+    def LoadTextures(self, textures):
+        for tex in textures:
+            self.textures.append(Texture(tex))
+
+    def setActiveTextures(self):
+        self.activeTextures = self.textures
 
 
 
@@ -367,7 +372,7 @@ class Renderer(object):
                                 # Calculo de color
                                 if self.fragmentShader != None:
                                     colorP = self.fragmentShader(texCoords = uvs,
-                                                                    texture = self.activeTexture)
+                                                                    textures = self.activeTextures)
 
                                     self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
 
@@ -376,12 +381,11 @@ class Renderer(object):
 
 
 
-    def glLoadModel(self, filename, textureName, translate = (0,0,0), rotate = (0,0,0), scale = (1,1,1)):
-        # Se crea el modelo y le asignamos su textura
+    def glLoadModel(self, filename, textureNames, translate = (0,0,0), rotate = (0,0,0), scale = (1,1,1)):
+        
         model = Model(filename, translate, rotate, scale)
-        model.LoadTexture(textureName)
+        model.LoadTextures(textureNames)
 
-            # Se agrega el modelo al listado de objetos
         self.objects.append(model)
 
 
@@ -395,7 +399,8 @@ class Renderer(object):
         for model in self.objects:
 
             # Establecemos la textura y la matriz del modelo
-            self.activeTexture = model.texture
+            model.setActiveTextures()
+            self.activeTextures = model.activeTextures
             mMat = self.glModelMatrix(model.translate, model.rotate, model.scale)
 
             # Para cada cara del modelo
