@@ -44,7 +44,7 @@ def vertexShader(vertex, **kwargs):
 #    return color
 
 
-def fragmentShader(**kwargs):
+def multiTextureShader(**kwargs):
     texCoords = kwargs["texCoords"]
     textures = kwargs["textures"] # Lista de texturas
 

@@ -11,7 +11,7 @@ rend = Renderer(width, height)
 
 # Se brindan los shaders a utilizar
 rend.vertexShader = shaders.vertexShader
-rend.fragmentShader = shaders.fragmentShader
+rend.fragmentShader = shaders.multiTextureShader
 
 # metodo look At
 rend.glLookAt(camPos=(2, 0, 0),
