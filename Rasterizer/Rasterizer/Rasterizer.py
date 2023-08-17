@@ -14,7 +14,7 @@ rend.glClear()
 
 # Se brindan los shaders a utilizar
 rend.vertexShader = shaders.vertexShader
-rend.fragmentShader = shaders.gouradShader
+rend.fragmentShader = shaders.toonShader
 
 
 # Cargar el modelo en el renderizador
