@@ -140,7 +140,8 @@ class Renderer(object):
                                                                  texCoords = texCoords,
                                                                  normals = normals,
                                                                  dLight = self.directionalLight,
-                                                                 bCoords = bCoords)
+                                                                 bCoords = bCoords,
+                                                                 camMatrix = self.camMatrix)
 
                                     self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
 

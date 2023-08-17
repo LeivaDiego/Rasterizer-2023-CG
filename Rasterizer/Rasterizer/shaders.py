@@ -50,7 +50,7 @@ def flatShader(**kwargs):
     texCoords = kwargs["texCoords"]
     texture = kwargs["texture"]
     dLight = kwargs["dLight"]
-    normal = kwargs["triangleNormal"]
+    normal = kwargs["normals"]
 
     b = 1.0
     g = 1.0
@@ -217,3 +217,60 @@ def redShader(**kwargs):
         return r, g, b
     else:
         return [0,0,0]
+
+
+
+def yellowGlowShader(**kwargs):
+    texture = kwargs["texture"]
+    tA, tB, tC = kwargs["texCoords"]
+    nA, nB, nC = kwargs["normals"]
+    dLight = kwargs["dLight"]
+    u, v, w = kwargs["bCoords"]
+    camMatrix = kwargs["camMatrix"]
+
+    b = 1.0
+    g = 1.0
+    r = 1.0
+
+    if texture != None:
+
+        tU = u * tA[0] + v * tB[0] + w * tC[0]
+        tV = u * tA[1] + v * tB[1] + w * tC[1]
+
+        textureColor = texture.getColor(tU, tV)
+        b *= textureColor[2]
+        g *= textureColor[1]
+        r *= textureColor[0]
+
+    # Se calcula la normal para el punto
+    normal = [u * nA[0] + v * nB[0] + w * nC[0],
+              u * nA[1] + v * nB[1] + w * nC[1],
+              u * nA[2] + v * nB[2] + w * nC[2]]
+    
+
+    dLight = list(dLight)
+    dLight = [-x for x in dLight]
+    intensity = dot_product(normal, dLight)
+
+    if intensity <= 0: intensity = 0
+
+    camForward = (camMatrix[0][2],
+                  camMatrix[1][2],
+                  camMatrix[2][2])
+
+    glowAmount = 1 - dot_product(normal, camForward)
+
+    if glowAmount <=0:
+        glowAmount = 0
+
+    yellow = (1,1,0)
+
+    b += glowAmount * yellow[2]
+    g += glowAmount * yellow[1]
+    r += glowAmount * yellow[0]
+
+    if b >= 1.0: b = 1.0
+    if g >= 1.0: g = 1.0
+    if r >= 1.0: r = 1.0
+
+    return r, g, b

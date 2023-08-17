@@ -14,7 +14,7 @@ rend.glClear()
 
 # Se brindan los shaders a utilizar
 rend.vertexShader = shaders.vertexShader
-rend.fragmentShader = shaders.redShader
+rend.fragmentShader = shaders.yellowGlowShader
 
 
 # Cargar el modelo en el renderizador
