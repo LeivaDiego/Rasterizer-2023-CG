@@ -91,10 +91,14 @@ class Renderer(object):
 
 
 
-    def glTriangle(self, A, B, C, vtA, vtB, vtC, triangleNormal):
+    def glTriangle(self, verts, texCoords, normals):
         # Rederizacion de un triangulo usando coordenadas baricentricas.
         # Se reciben los vertices A, B y C y las coordenadas de
         # textura vtA, vtB y vtC
+        
+        A = verts[0]
+        B = verts[1]
+        C = verts[2]
 
         # Bounding box
         minX = round(min(A[0], B[0], C[0]))
@@ -125,20 +129,18 @@ class Renderer(object):
 
                                 # Guardamos este valor de Z en el Z Buffer
                                 self.zbuffer[x][y] = z
-                        
-                                # Calcular las UVs del pixel usando las coordenadas baricentricas.
-                                uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
-                                        u * vtA[1] + v * vtB[1] + w * vtC[1])
+                      
                         
                                 # Si contamos un Fragment Shader, obtener el color de ahi.
                                 # Sino, usar el color preestablecido.
                                 if self.fragmentShader != None:                            
 
                                     # Mandar los parametros necesarios al shader
-                                    colorP = self.fragmentShader(texCoords = uvs,
-                                                                    texture = self.activeTexture,
-                                                                    triangleNormal = triangleNormal,
-                                                                    dLight = self.directionalLight)
+                                    colorP = self.fragmentShader(texture = self.activeTexture,
+                                                                 texCoords = texCoords,
+                                                                 normals = normals,
+                                                                 dLight = self.directionalLight,
+                                                                 bCoords = bCoords)
 
                                     self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
 
@@ -147,7 +149,7 @@ class Renderer(object):
 
 
 
-    def glPrimitiveAssembly(self, tVerts, tTexCoords, normals):
+    def glPrimitiveAssembly(self, tVerts, tTexCoords, tNormals):
      
         # Esta funcion construye las primitivas de acuerdo con la
         # opcion de primitiva actual. De momento solo hay para triangulos
@@ -158,21 +160,27 @@ class Renderer(object):
             for i in range(0, len(tVerts), 3):
                 # Un triangulo contara con las posiciones de sus vertices y
                 # y sus UVs, seguidos uno tras otro.
-                
-                triangle = []
-                
+ 
                 # Vertices
-                triangle.append( tVerts[i] )
-                triangle.append( tVerts[i + 1] )
-                triangle.append( tVerts[i + 2] )
+                verts = []
+                verts.append( tVerts[i] )
+                verts.append( tVerts[i + 1] )
+                verts.append( tVerts[i + 2] )
 
                 # Coordenadas de texturas
-                triangle.append( tTexCoords[i] )
-                triangle.append( tTexCoords[i + 1] )
-                triangle.append( tTexCoords[i + 2] )
+                texCoords = []
+                texCoords.append( tTexCoords[i] )
+                texCoords.append( tTexCoords[i + 1] )
+                texCoords.append( tTexCoords[i + 2] )
 
                 # Normales
-                triangle.append(normals[int(i / 3)])
+                normals = []
+                normals.append(tNormals[i])
+                normals.append(tNormals[i + 1])
+                normals.append(tNormals[i + 2])
+
+
+                triangle = [verts, texCoords, normals]
 
 
                 primitives.append(triangle)
@@ -384,16 +392,10 @@ class Renderer(object):
                 v1 = model.vertices[ face[1][0] - 1]
                 v2 = model.vertices[ face[2][0] - 1]
 
-                triangleNormal0= cross_product(subtract_vector(v1, v0), subtract_vector(v2, v0)) 
-                triangleNormal0= vector_normalize(triangleNormal0)
-                normals.append(triangleNormal0)
 
                 if vertCount == 4:
                     v3 = model.vertices[face[3][0]-1]
-                    triangleNormal1 = cross_product(subtract_vector(v2, v0), subtract_vector(v3, v0))
-                    triangleNormal1 = vector_normalize(triangleNormal1)
-                    normals.append(triangleNormal1)
-               
+
 
                 # Si contamos con un Vertex Shader, se manda cada vertice 
                 # al mismo para transformarlos. Recordar pasar las matrices
@@ -432,6 +434,7 @@ class Renderer(object):
                     transformedVerts.append(v2)
                     transformedVerts.append(v3)
 
+
                 # Obtenemos las coordenadas de textura de la cara actual
                 vt0 = model.texcoords[ face[0][1] - 1]
                 vt1 = model.texcoords[ face[1][1] - 1]
@@ -448,6 +451,24 @@ class Renderer(object):
                     texCoords.append(vt2)
                     texCoords.append(vt3)
 
+
+
+                # Obtenemos las normales del archivo del modelo
+                vn0 = model.normals[ face[0][2] - 1]
+                vn1 = model.normals[ face[1][2] - 1]
+                vn2 = model.normals[ face[2][2] - 1]
+                if vertCount == 4:
+                    vn3 = model.normals[face[3][2] - 1]
+
+                # Agregamos las normales al listado de normales
+                normals.append(vn0)
+                normals.append(vn1)
+                normals.append(vn2)
+                if vertCount == 4:
+                    normals.append(vn0)
+                    normals.append(vn2)
+                    normals.append(vn3)
+
         # Se crean las primitivas
         primitives = self.glPrimitiveAssembly(transformedVerts, texCoords, normals)
 
@@ -455,9 +476,7 @@ class Renderer(object):
         for prim in primitives:
             if self.primitiveType == TRIANGLES:
                 # Triangulo con coordenadas baricentricas
-                self.glTriangle(prim[0], prim[1], prim[2],
-                                    prim[3], prim[4], prim[5],
-                                    prim[6])
+                self.glTriangle(prim[0], prim[1], prim[2])
 
 
 
