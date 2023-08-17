@@ -17,21 +17,20 @@ rend.glClear()
 
 #A
 model1 = Model("model.obj",
-              translate = (0,0,-5),                
+              translate = (3,0,-5),                
               rotate = (0,0,0),                    
               scale = (2,2,2))
-model1.LoadTexture("model.bmp")
-model1.SetShaders(shaders.vertexShader, shaders.StarmanShader)
+model1.LoadTextures(["model.bmp", "magma.bmp"])
+model1.SetShaders(shaders.vertexShader, shaders.multiTextureShader)
 rend.glAddModel(model1)
 
-##B
-
+#B
 #model2 = Model("model.obj",
 #               translate = (0,0,-5),                
 #               rotate = (0,0,0),                    
 #               scale = (2,2,2))
-#model2.LoadTexture("model.bmp")
-#model2.SetShaders(shaders.vertexShader, shaders.toonShader)
+#model2.LoadTextures(["model.bmp"])
+#model2.SetShaders(shaders.vertexShader, shaders.StarmanShader)
 #rend.glAddModel(model2)
 
 

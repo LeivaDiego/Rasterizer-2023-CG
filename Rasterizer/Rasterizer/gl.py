@@ -25,12 +25,19 @@ class Model(object):
         self.rotate = rotate
         self.scale = scale
 
+        self.textures = []
+        self.currTexIndex = 0
+
         self.SetShaders(None, None)
+       
 
 
-    def LoadTexture(self, textureName):
-        self.texture = Texture(textureName)
+    def LoadTextures(self, textures):
+        for tex in textures:
+            self.textures.append(Texture(tex))
 
+    def setActiveTextures(self):
+        self.activeTextures = self.textures
 
     def SetShaders(self, vertexShader, fragmentShader):
         self.vertexShader = vertexShader
@@ -143,7 +150,7 @@ class Renderer(object):
                                 if self.fragmentShader != None:                            
 
                                     # Mandar los parametros necesarios al shader
-                                    colorP = self.fragmentShader(texture = self.activeTexture,
+                                    colorP = self.fragmentShader(textures = self.activeTextures,
                                                                  texCoords = texCoords,
                                                                  normals = normals,
                                                                  dLight = self.directionalLight,
@@ -385,10 +392,11 @@ class Renderer(object):
             texCoords = []
             normals = []
 
+            model.setActiveTextures()
             # Establecemos la textura y la matriz del modelo
             self.vertexShader = model.vertexShader
             self.fragmentShader = model.fragmentShader
-            self.activeTexture = model.texture
+            self.activeTextures = model.activeTextures
             mMat = self.glModelMatrix(model.translate, model.rotate, model.scale)
 
             # Para cada cara del modelo

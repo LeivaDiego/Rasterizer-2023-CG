@@ -28,6 +28,7 @@ def vertexShader(vertex, **kwargs):
 
     return vt
 
+
 def fragmentShader(**kwargs):
 
     # El Fragment Shader se lleva a cabo por cada pixel
@@ -42,7 +43,6 @@ def fragmentShader(**kwargs):
         color = (1,1,1)
 
     return color
-
 
 
 def flatShader(**kwargs):
@@ -219,7 +219,6 @@ def redShader(**kwargs):
         return [0,0,0]
 
 
-
 def yellowGlowShader(**kwargs):
     texture = kwargs["texture"]
     tA, tB, tC = kwargs["texCoords"]
@@ -278,7 +277,7 @@ def yellowGlowShader(**kwargs):
 
 def StarmanShader(**kwargs):
     # Se extraen los argumentos clave del diccionario kwargs
-    texture = kwargs["texture"]
+    textures = kwargs["textures"]
     tA, tB, tC = kwargs["texCoords"]
     nA, nB, nC = kwargs["normals"]
     dLight = kwargs["dLight"]
@@ -291,12 +290,12 @@ def StarmanShader(**kwargs):
     r = 1.0
 
     # Si hay una textura, se mezcla con el color base
-    if texture is not None:
+    if textures[0] is not None:
         tU = u * tA[0] + v * tB[0] + w * tC[0]
         tV = u * tA[1] + v * tB[1] + w * tC[1]
 
         # Se obtiene el color de la textura en las coordenadas tU, tV
-        textureColor = texture.getColor(tU, tV)
+        textureColor = textures[0].getColor(tU, tV)
 
         # Se modifica el color base con los componentes de la textura
         b *= textureColor[2]
@@ -357,3 +356,38 @@ def StarmanShader(**kwargs):
     return r, g, b
 
 
+def multiTextureShader(**kwargs):
+    tA, tB, tC = kwargs["texCoords"]
+    textures = kwargs["textures"]
+    nA, nB, nC = kwargs["normals"]
+    dLight = kwargs["dLight"]
+    u, v, w = kwargs["bCoords"]
+
+    tU = u * tA[0] + v * tB[0] + w * tC[0]
+    tV = u * tA[1] + v * tB[1] + w * tC[1]
+    
+    # Se calcula la normal para el punto
+    normal = [u * nA[0] + v * nB[0] + w * nC[0],
+              u * nA[1] + v * nB[1] + w * nC[1],
+              u * nA[2] + v * nB[2] + w * nC[2]]
+    
+    dLight = list(dLight)
+    dLight = [-x for x in dLight]
+    intensity = dot_product(normal, dLight)
+
+    color_final = [0, 0, 0]
+    
+    for texture in textures:
+        if texture != None:
+            textureColor = texture.getColor(tU, tV)
+            
+            color_final[0] = max(color_final[0], textureColor[0] * intensity)
+            color_final[1] = max(color_final[1], textureColor[1] * intensity)
+            color_final[2] = max(color_final[2], textureColor[2] * intensity)
+
+
+    # Verificar que la intensidad sea mayor que 0 para devolver los valores, si no, devolver [0,0,0]
+    if intensity > 0:
+        return color_final
+    else:
+        return [0,0,0]
