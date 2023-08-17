@@ -164,3 +164,15 @@ def subtract_vector(vectorA, vectorB):
         raise ValueError("Los vectores deben tener la misma longitud.")
     # Restar componente a componente los vectores
     return [a - b for a, b in zip(vectorA, vectorB)]
+
+
+def dot_product(A, B):
+    if len(A) != len(B):
+        raise ValueError("los vectores deben tener la misma longitud")
+
+    result = 0
+    for i in range(len(A)):
+        result += A[i] * B[i]
+    
+    return result
+

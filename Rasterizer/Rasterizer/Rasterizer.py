@@ -8,14 +8,12 @@ height = 540   # Alto en pixeles
 
 # Inicializar el Renderer con la resolucion definida
 rend = Renderer(width, height)
+rend.glClearColor(0.5, 0.5, 0.5)
+rend.glClear()
 
 # Se brindan los shaders a utilizar
 rend.vertexShader = shaders.vertexShader
-rend.fragmentShader = shaders.fragmentShader
-
-# metodo look At
-rend.glLookAt(camPos=(2, 0, 0),
-              eyePos=(0, 0, -5))
+rend.fragmentShader = shaders.flatShader
 
 
 # Cargar el modelo en el renderizador

@@ -1,5 +1,5 @@
 
-from myNumpy import matrix_multiplier, matrix_vector_multiplier
+from myNumpy import matrix_multiplier, matrix_vector_multiplier, dot_product
 
 
 def vertexShader(vertex, **kwargs):
@@ -42,3 +42,38 @@ def fragmentShader(**kwargs):
         color = (1,1,1)
 
     return color
+
+
+
+def flatShader(**kwargs):
+    
+    texCoords = kwargs["texCoords"]
+    texture = kwargs["texture"]
+    dLight = kwargs["dLight"]
+    normal = kwargs["triangleNormal"]
+
+    b = 1.0
+    g = 1.0
+    r = 1.0
+    
+    if texture != None:
+        textureColor = texture.getColor(texCoords[0], texCoords[1])
+        b *= textureColor[2]
+        g *= textureColor[1]
+        r *= textureColor[0]
+
+
+    dLight = list(dLight)
+    dLight = [-x for x in dLight]
+    intensity = dot_product(normal, dLight)
+
+    
+    b *= intensity
+    g *= intensity
+    r *= intensity
+
+
+    if intensity > 0:
+        return r, g, b
+    else:
+        return (0,0,0)

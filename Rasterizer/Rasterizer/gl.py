@@ -1,10 +1,8 @@
-from logging.handlers import RotatingFileHandler
 from math import pi, sin, cos, tan, radians
 from myNumpy import barycentricCoords, cross_product, inverse_matrix, matrix_multiplier, subtract_vector, vector_normalize
 from obj import Obj
 from texture import Texture
 from support import *
-import numpy as np
 
 
 POINTS = 0
@@ -40,6 +38,7 @@ class Renderer(object):
 
         self.glClearColor(0,0,0)
         self.glClear()
+
         self.glColor(1,1,1)
 
         self.objects = []
@@ -49,13 +48,13 @@ class Renderer(object):
 
         self.primitiveType = TRIANGLES
 
-        self.vertexBuffer = []
-
         self.activeTexture = None
 
         self.glViewPort(0,0,self.width, self.height)
         self.glCamMatrix()
         self.glProjectionMatrix()
+
+        self.directionalLight = (1,0,0)
 
 
 
@@ -92,7 +91,7 @@ class Renderer(object):
 
 
 
-    def glTriangle(self, A, B, C, vtA, vtB, vtC):
+    def glTriangle(self, A, B, C, vtA, vtB, vtC, triangleNormal):
         # Rederizacion de un triangulo usando coordenadas baricentricas.
         # Se reciben los vertices A, B y C y las coordenadas de
         # textura vtA, vtB y vtC
@@ -110,41 +109,45 @@ class Renderer(object):
                 if (0 <= x < self.width) and (0 <= y < self.height):
 
                     P = (x,y)
-                    bCoords = barycentricCoords(A, B, C, P)
+                    bCoords = barycentricCoords(A,B,C,P)
 
                     # Si se obtienen coordenadas baricentricas validas para este punto
                     if bCoords != None:
+                        u,v,w = bCoords
 
-                        u, v, w = bCoords
+                        if 0<=u<=1 and 0<=v<=1 and 0<=w<=1:
 
-                        # Se calcula el valor Z para este punto usando las coordenadas baricentricas
-                        z = u * A[2] + v * B[2] + w * C[2]
+                            # Se calcula el valor Z para este punto usando las coordenadas baricentricas
+                            z = u * A[2] + v * B[2] + w * C[2]
 
-                        # Si el valor de Z para este punto es menor que el valor guardado en el Z Buffer
-                        if z < self.zbuffer[x][y]:
-                            
-                            # Guardamos este valor de Z en el Z Buffer
-                            self.zbuffer[x][y] = z
+                            # Si el valor de Z para este punto es menor que el valor guardado en el Z Buffer
+                            if z < self.zbuffer[x][y]:
 
-                            # Calcular las UVs del pixel usando las coordenadas baricentricas.
-                            uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
-                                   u * vtA[1] + v * vtB[1] + w * vtC[1])
+                                # Guardamos este valor de Z en el Z Buffer
+                                self.zbuffer[x][y] = z
+                        
+                                # Calcular las UVs del pixel usando las coordenadas baricentricas.
+                                uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
+                                        u * vtA[1] + v * vtB[1] + w * vtC[1])
+                        
+                                # Si contamos un Fragment Shader, obtener el color de ahi.
+                                # Sino, usar el color preestablecido.
+                                if self.fragmentShader != None:                            
 
-                            # Si contamos un Fragment Shader, obtener el color de ahi.
-                            # Sino, usar el color preestablecido.
-                            if self.fragmentShader != None:
-                                # Mandar los parametros necesarios al shader
-                                colorP = self.fragmentShader(texCoords = uvs,
-                                                                texture = self.activeTexture)
+                                    # Mandar los parametros necesarios al shader
+                                    colorP = self.fragmentShader(texCoords = uvs,
+                                                                    texture = self.activeTexture,
+                                                                    triangleNormal = triangleNormal,
+                                                                    dLight = self.directionalLight)
 
-                                self.glPoint(x, y, color(colorP[0], colorP[1], colorP[2]))
-                                
-                            else:
-                                self.glPoint(x, y)
+                                    self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
 
+                                else:
+                                    self.glPoint(x, y, colorP)
 
 
-    def glPrimitiveAssembly(self, tVerts, tTexCoords):
+
+    def glPrimitiveAssembly(self, tVerts, tTexCoords, normals):
      
         # Esta funcion construye las primitivas de acuerdo con la
         # opcion de primitiva actual. De momento solo hay para triangulos
@@ -163,10 +166,14 @@ class Renderer(object):
                 triangle.append( tVerts[i + 1] )
                 triangle.append( tVerts[i + 2] )
 
-                # coordenadas de texturas
+                # Coordenadas de texturas
                 triangle.append( tTexCoords[i] )
                 triangle.append( tTexCoords[i + 1] )
                 triangle.append( tTexCoords[i + 2] )
+
+                # Normales
+                triangle.append(normals[int(i / 3)])
+
 
                 primitives.append(triangle)
 
@@ -216,6 +223,8 @@ class Renderer(object):
 
         self.viewMatrix = inverse_matrix(self.camMatrix)
 
+
+
     def glProjectionMatrix(self, fov = 60, n = 0.1, f = 1000):
 
         aspectRatio = self.vpWidth / self.vpHeight
@@ -251,6 +260,8 @@ class Renderer(object):
         
         return transformation_matrix
 
+
+
     def glRotationMatrix(self, pitch = 0, yaw = 0, roll = 0):
         # Convertir a radianes
         pitch *= pi/180
@@ -276,6 +287,7 @@ class Renderer(object):
         # Se multiplican las tres matrices para obtener la matriz de rotaci�n final
         return matrix_multiplier(matrix_multiplier(pitchMat, yawMat), rollMat)
         
+
 
     def glLine(self, v0, v1, clr = None):
         # Bresenham line algorithm
@@ -338,44 +350,6 @@ class Renderer(object):
 
 
 
-    def glTriangle_bc(self, A, B, C, vtA, vtB, vtC):
-
-        minX = round(min(A[0], B[0], C[0]))
-        maxX = round(max(A[0], B[0], C[0]))
-        minY = round(min(A[1], B[1], C[1]))
-        maxY = round(max(A[1], B[1], C[1]))
-
-        for x in range(minX, maxX + 1):
-            for y in range(minY, maxY + 1):
-                if (0 <= x < self.width) and (0 <= y < self.height):
-                    P = (x,y)
-                    bCoords = barycentricCoords(A,B,C,P)
-
-                    if bCoords != None:
-                        u,v,w = bCoords
-                        if 0<=u<=1 and 0<=v<=1 and 0<=w<=1:
-                            # Calculo de valor profundidad del punto del triangulo
-                            z = u * A[2] + v * B[2] + w * C[2]
-
-                            if z < self.zbuffer[x][y]:
-
-                                self.zbuffer[x][y] = z
-                        
-                                uvs = (u * vtA[0] + v * vtB[0] + w * vtC[0],
-                                        u * vtA[1] + v * vtB[1] + w * vtC[1])
-                        
-                                # Calculo de color
-                                if self.fragmentShader != None:
-                                    colorP = self.fragmentShader(texCoords = uvs,
-                                                                    texture = self.activeTexture)
-
-                                    self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
-
-                                else:
-                                    self.glPoint(x, y, colorP)
-
-
-
     def glLoadModel(self, filename, textureName, translate = (0,0,0), rotate = (0,0,0), scale = (1,1,1)):
         # Se crea el modelo y le asignamos su textura
         model = Model(filename, translate, rotate, scale)
@@ -390,6 +364,7 @@ class Renderer(object):
         # Esta funcion esta encargada de renderizar todo a la tabla de pixeles
         transformedVerts = []
         texCoords = []
+        normals = []
 
         # Para cada modelo en nuestro listado de objetos
         for model in self.objects:
@@ -408,9 +383,18 @@ class Renderer(object):
                 v0 = model.vertices[ face[0][0] - 1]
                 v1 = model.vertices[ face[1][0] - 1]
                 v2 = model.vertices[ face[2][0] - 1]
+
+                triangleNormal0= cross_product(subtract_vector(v1, v0), subtract_vector(v2, v0)) 
+                triangleNormal0= vector_normalize(triangleNormal0)
+                normals.append(triangleNormal0)
+
                 if vertCount == 4:
                     v3 = model.vertices[face[3][0]-1]
-                
+                    triangleNormal1 = cross_product(subtract_vector(v2, v0), subtract_vector(v3, v0))
+                    triangleNormal1 = vector_normalize(triangleNormal1)
+                    normals.append(triangleNormal1)
+               
+
                 # Si contamos con un Vertex Shader, se manda cada vertice 
                 # al mismo para transformarlos. Recordar pasar las matrices
                 # necesarias para usarlas dentro del shader.
@@ -465,14 +449,15 @@ class Renderer(object):
                     texCoords.append(vt3)
 
         # Se crean las primitivas
-        primitives = self.glPrimitiveAssembly(transformedVerts, texCoords)
+        primitives = self.glPrimitiveAssembly(transformedVerts, texCoords, normals)
 
         # Para cada primitiva
         for prim in primitives:
             if self.primitiveType == TRIANGLES:
                 # Triangulo con coordenadas baricentricas
-                self.glTriangle_bc(prim[0], prim[1], prim[2],
-                                    prim[3], prim[4], prim[5])
+                self.glTriangle(prim[0], prim[1], prim[2],
+                                    prim[3], prim[4], prim[5],
+                                    prim[6])
 
 
 
