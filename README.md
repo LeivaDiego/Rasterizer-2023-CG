@@ -1,7 +1,15 @@
 # Rasterizer-2023-CG
 ## Entrega Lab 2
-Los arhivos de la entrega "Lab 2: Shaders" se encuentra en la branch llamada lab2
-Actualmente solo se encuentra la primera version de un shader que acepta mas de una sola textura para el modelo y los combina
+La primera entrega de "Lab 2: Shaders" (10 de agosto de 2023) se encuentra en la branch llamada lab2
+Solo se encuentra la primera version de un shader que acepta mas de una sola textura para el modelo y los combina
+
+La entrega final de "Lab 2: Shaders" (16 de agosto de 2023) se encuentra en la branch llamada lab2Final
+En esta branch ya se ecuentran los 3 shaders solicitados, asi como el render final con el modelo propio
+
+### Nota
+Tuve que crear una nueva branch ya que hice varios cambios al programa luego de haber hecho la entrega inicial, 
+entonces para no hacer un merge o confundirme, decidi que era mas facil tener una nueva branch. 
+Por otro lado, creo que los shaders se logran apreciar mejor con el modelo de ejemplo, por lo que creo seria buena idea visualizar el output.bmp de una version anterior
 
 ## Entrega R3
 Los archivos de la entrega "R3: Cameras", se encuentra en la branch llamada R3
