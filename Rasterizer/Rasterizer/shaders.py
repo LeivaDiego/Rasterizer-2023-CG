@@ -409,7 +409,7 @@ def trypophobiaShader(**kwargs):
     
     # Utilizar el centroide para determinar si renderizar o no
     random.seed(str(centroid))  # usa el centroide como semilla
-    if random.random() < 0.20:  # 10% de probabilidad de ser transparente
+    if random.random() < 0.15:  # 10% de probabilidad de ser transparente
         return 0.5, 0.5, 0.5
 
     # Tomamos la normal promedio de la cara, no interpolada
