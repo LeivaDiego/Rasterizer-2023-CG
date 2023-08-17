@@ -155,7 +155,8 @@ class Renderer(object):
                                                                  normals = normals,
                                                                  dLight = self.directionalLight,
                                                                  bCoords = bCoords,
-                                                                 camMatrix = self.camMatrix)
+                                                                 camMatrix = self.camMatrix,
+                                                                 verts = verts)
 
                                     self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
 

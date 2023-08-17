@@ -16,13 +16,13 @@ rend.glClear()
 
 
 #A
-model1 = Model("model.obj",
-              translate = (3,0,-5),                
-              rotate = (0,0,0),                    
-              scale = (2,2,2))
-model1.LoadTextures(["model.bmp", "magma.bmp"])
-model1.SetShaders(shaders.vertexShader, shaders.multiTextureShader)
-rend.glAddModel(model1)
+#model1 = Model("model.obj",
+#              translate = (3,0,-5),                
+#              rotate = (0,0,0),                    
+#              scale = (2,2,2))
+#model1.LoadTextures(["model.bmp", "magma.bmp"])
+#model1.SetShaders(shaders.vertexShader, shaders.multiTextureShader)
+#rend.glAddModel(model1)
 
 #B
 #model2 = Model("model.obj",
@@ -35,14 +35,14 @@ rend.glAddModel(model1)
 
 
 
-##C
-#model3 = Model("model.obj",
-#              translate = (3,0,-5),                
-#              rotate = (0,0,0),                    
-#              scale = (2,2,2))
-#model3.LoadTexture("model.bmp")
-#model3.SetShaders(shaders.vertexShader, shaders.redShader)
-#rend.glAddModel(model3)
+#C
+model3 = Model("model.obj",
+              translate = (0,0,-5),                
+              rotate = (0,0,0),                    
+              scale = (2,2,2))
+model3.LoadTextures(["model.bmp"])
+model3.SetShaders(shaders.vertexShader, shaders.trypophobiaShader)
+rend.glAddModel(model3)
 
 
 # Renderizar el modelo en la imagen

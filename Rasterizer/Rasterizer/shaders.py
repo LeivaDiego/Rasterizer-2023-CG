@@ -1,6 +1,6 @@
-
 from myNumpy import matrix_multiplier, matrix_vector_multiplier, dot_product
-from math import sin, pi
+from math import sin, pi, sqrt
+import random
 
 def vertexShader(vertex, **kwargs):
 
@@ -356,6 +356,7 @@ def StarmanShader(**kwargs):
     return r, g, b
 
 
+
 def multiTextureShader(**kwargs):
     tA, tB, tC = kwargs["texCoords"]
     textures = kwargs["textures"]
@@ -391,3 +392,56 @@ def multiTextureShader(**kwargs):
         return color_final
     else:
         return [0,0,0]
+
+
+
+def trypophobiaShader(**kwargs):
+
+    textures = kwargs["textures"]
+    tA, tB, tC = kwargs["texCoords"]
+    nA, nB, nC = kwargs["normals"]
+    dLight = kwargs["dLight"]
+    u, v, w = kwargs["bCoords"]
+    verts = kwargs["verts"] # se asume que tienes los vértices
+
+    # Calcular el centroide del triángulo
+    centroid = [(v[0] + v[1] + v[2]) / 3 for v in zip(*verts)]
+    
+    # Utilizar el centroide para determinar si renderizar o no
+    random.seed(str(centroid))  # usa el centroide como semilla
+    if random.random() < 0.20:  # 10% de probabilidad de ser transparente
+        return 0.5, 0.5, 0.5
+
+    # Tomamos la normal promedio de la cara, no interpolada
+    normal = [sum(x) for x in zip(nA, nB, nC)]
+    magnitude = sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2)
+    normal = [n/magnitude for n in normal]  # normalizamos
+
+    # Color base como en Minecraft
+    b = 1.0
+    g = 1.0
+    r = 1.0
+
+    # Si hay una textura, se mezcla con el color base
+    if textures[0] is not None:
+        tU = u * tA[0] + v * tB[0] + w * tC[0]
+        tV = u * tA[1] + v * tB[1] + w * tC[1]
+        textureColor = textures[0].getColor(tU, tV)
+        b *= textureColor[2]
+        g *= textureColor[1]
+        r *= textureColor[0]
+
+    dLight = [-x for x in dLight]  # invierte la dirección de la luz
+    intensity = dot_product(normal, dLight)
+    
+    if intensity <= 0:
+        intensity = 0
+
+    # Asegura que los componentes de color no excedan 1.0
+    b = min(b * intensity, 1.0)
+    g = min(g * intensity, 1.0)
+    r = min(r * intensity, 1.0)
+
+    return r, g, b
+
+
