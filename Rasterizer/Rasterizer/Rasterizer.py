@@ -1,6 +1,6 @@
 import shaders
 from obj import Obj
-from gl import Renderer
+from gl import Renderer, Model
 
 # La resolucion de la imagen generada
 width = 960    # Ancho en pixeles
@@ -12,17 +12,38 @@ rend.glClearColor(0.5, 0.5, 0.5)
 rend.glClear()
 
 
-# Se brindan los shaders a utilizar
-rend.vertexShader = shaders.vertexShader
-rend.fragmentShader = shaders.yellowGlowShader
+# Se cargan los modelos con sus efectos a renderizar
 
 
-# Cargar el modelo en el renderizador
-rend.glLoadModel(filename = "model.obj",              
-                 textureName = "model.bmp",           
-                 translate = (0,0,-5),                
-                 rotate = (0,0,0),                    
-                 scale = (2,2,2))
+#A
+model1 = Model("model.obj",
+              translate = (-3,0,-5),                
+              rotate = (0,0,0),                    
+              scale = (2,2,2))
+model1.LoadTexture("model.bmp")
+model1.SetShaders(shaders.vertexShader, shaders.yellowGlowShader)
+rend.glAddModel(model1)
+
+#B
+
+model2 = Model("model.obj",
+               translate = (0,0,-5),                
+               rotate = (0,0,0),                    
+               scale = (2,2,2))
+model2.LoadTexture("model.bmp")
+model2.SetShaders(shaders.vertexShader, shaders.toonShader)
+rend.glAddModel(model2)
+
+
+
+#C
+model3 = Model("model.obj",
+              translate = (3,0,-5),                
+              rotate = (0,0,0),                    
+              scale = (2,2,2))
+model3.LoadTexture("model.bmp")
+model3.SetShaders(shaders.vertexShader, shaders.redShader)
+rend.glAddModel(model3)
 
 
 # Renderizar el modelo en la imagen

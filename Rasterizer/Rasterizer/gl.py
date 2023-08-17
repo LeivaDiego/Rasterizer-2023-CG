@@ -25,9 +25,16 @@ class Model(object):
         self.rotate = rotate
         self.scale = scale
 
+        self.SetShaders(None, None)
+
 
     def LoadTexture(self, textureName):
         self.texture = Texture(textureName)
+
+
+    def SetShaders(self, vertexShader, fragmentShader):
+        self.vertexShader = vertexShader
+        self.fragmentShader = fragmentShader
 
 
 
@@ -359,12 +366,8 @@ class Renderer(object):
 
 
 
-    def glLoadModel(self, filename, textureName, translate = (0,0,0), rotate = (0,0,0), scale = (1,1,1)):
-        # Se crea el modelo y le asignamos su textura
-        model = Model(filename, translate, rotate, scale)
-        model.LoadTexture(textureName)
-
-            # Se agrega el modelo al listado de objetos
+    def glAddModel(self, model):
+        # Se agrega el modelo al listado de objetos
         self.objects.append(model)
 
 
@@ -377,8 +380,14 @@ class Renderer(object):
 
         # Para cada modelo en nuestro listado de objetos
         for model in self.objects:
+            # se vacia la informacion
+            transformedVerts = []
+            texCoords = []
+            normals = []
 
             # Establecemos la textura y la matriz del modelo
+            self.vertexShader = model.vertexShader
+            self.fragmentShader = model.fragmentShader
             self.activeTexture = model.texture
             mMat = self.glModelMatrix(model.translate, model.rotate, model.scale)
 
@@ -470,14 +479,14 @@ class Renderer(object):
                     normals.append(vn2)
                     normals.append(vn3)
 
-        # Se crean las primitivas
-        primitives = self.glPrimitiveAssembly(transformedVerts, texCoords, normals)
+            # Se crean las primitivas
+            primitives = self.glPrimitiveAssembly(transformedVerts, texCoords, normals)
 
-        # Para cada primitiva
-        for prim in primitives:
-            if self.primitiveType == TRIANGLES:
-                # Triangulo con coordenadas baricentricas
-                self.glTriangle(prim[0], prim[1], prim[2])
+            # Para cada primitiva
+            for prim in primitives:
+                if self.primitiveType == TRIANGLES:
+                    # Triangulo con coordenadas baricentricas
+                    self.glTriangle(prim[0], prim[1], prim[2])
 
 
 
