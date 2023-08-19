@@ -380,6 +380,7 @@ class Renderer(object):
 
         # Para cada modelo en nuestro listado de objetos
         for model in self.objects:
+
             # se vacia la informacion
             transformedVerts = []
             texCoords = []
@@ -401,11 +402,24 @@ class Renderer(object):
                 v0 = model.vertices[ face[0][0] - 1]
                 v1 = model.vertices[ face[1][0] - 1]
                 v2 = model.vertices[ face[2][0] - 1]
-
-
                 if vertCount == 4:
                     v3 = model.vertices[face[3][0]-1]
 
+
+                # Obtenemos las coordenadas de textura de la cara actual
+                vt0 = model.texcoords[ face[0][1] - 1]
+                vt1 = model.texcoords[ face[1][1] - 1]
+                vt2 = model.texcoords[ face[2][1] - 1]
+                if vertCount == 4:
+                    vt3 = model.texcoords[face[3][1] - 1]
+
+
+                # Obtenemos las normales del archivo del modelo
+                vn0 = model.normals[ face[0][2] - 1]
+                vn1 = model.normals[ face[1][2] - 1]
+                vn2 = model.normals[ face[2][2] - 1]
+                if vertCount == 4:
+                    vn3 = model.normals[face[3][2] - 1]
 
                 # Si contamos con un Vertex Shader, se manda cada vertice 
                 # al mismo para transformarlos. Recordar pasar las matrices
@@ -415,25 +429,29 @@ class Renderer(object):
                                             modelMatrix = mMat,
                                             viewMatrix = self.viewMatrix,
                                             projectionMatrix = self.projectionMatrix,
-                                            vpMatrix = self.vpMatrix)
+                                            vpMatrix = self.vpMatrix,
+                                            normal = vn0)
 
                     v1 = self.vertexShader(v1, 
                                             modelMatrix = mMat,
                                             viewMatrix = self.viewMatrix,
                                             projectionMatrix = self.projectionMatrix,
-                                            vpMatrix = self.vpMatrix)
+                                            vpMatrix = self.vpMatrix,
+                                            normal = vn1)
 
                     v2 = self.vertexShader(v2, 
                                             modelMatrix = mMat,
                                             viewMatrix = self.viewMatrix,
                                             projectionMatrix = self.projectionMatrix,
-                                            vpMatrix = self.vpMatrix)
+                                            vpMatrix = self.vpMatrix,
+                                            normal = vn2)
                     if vertCount == 4:
                         v3 = self.vertexShader(v3, 
                                                 modelMatrix = mMat,
                                                 viewMatrix = self.viewMatrix,
                                                 projectionMatrix = self.projectionMatrix,
-                                                vpMatrix = self.vpMatrix)
+                                                vpMatrix = self.vpMatrix,
+                                                normal = vn3)
                 
                 # Agregar cada vertice transformado al listado de vertices.
                 transformedVerts.append(v0)
@@ -445,12 +463,7 @@ class Renderer(object):
                     transformedVerts.append(v3)
 
 
-                # Obtenemos las coordenadas de textura de la cara actual
-                vt0 = model.texcoords[ face[0][1] - 1]
-                vt1 = model.texcoords[ face[1][1] - 1]
-                vt2 = model.texcoords[ face[2][1] - 1]
-                if vertCount == 4:
-                    vt3 = model.texcoords[face[3][1] - 1]
+                
 
                 # Agregamos las coordenadas de textura al listado de coordenadas de textura.
                 texCoords.append(vt0)
@@ -463,12 +476,7 @@ class Renderer(object):
 
 
 
-                # Obtenemos las normales del archivo del modelo
-                vn0 = model.normals[ face[0][2] - 1]
-                vn1 = model.normals[ face[1][2] - 1]
-                vn2 = model.normals[ face[2][2] - 1]
-                if vertCount == 4:
-                    vn3 = model.normals[face[3][2] - 1]
+                
 
                 # Agregamos las normales al listado de normales
                 normals.append(vn0)

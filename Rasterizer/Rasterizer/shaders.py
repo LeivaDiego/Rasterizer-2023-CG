@@ -33,17 +33,53 @@ def fragmentShader(**kwargs):
     # El Fragment Shader se lleva a cabo por cada pixel
     # que se renderizar� en la pantalla.
 
-    texCoords = kwargs["texCoords"]
     texture = kwargs["texture"]
+    tA, tB, tC = kwargs["texCoords"]
+    u, v, w = kwargs["bCoords"]
+
+    b = 1.0
+    g = 1.0
+    r = 1.0
 
     if texture != None:
-        color = texture.getColor(texCoords[0], texCoords[1])
-    else:
-        color = (1,1,1)
 
-    return color
+        tU = u * tA[0] + v * tB[0] + w * tC[0]
+        tV = u * tA[1] + v * tB[1] + w * tC[1]
+
+        textureColor = texture.getColor(tU, tV)
+        b *= textureColor[2]
+        g *= textureColor[1]
+        r *= textureColor[0]
 
 
+    return r, g, b
+
+def fatShader(vertex, **kwargs):
+
+    modelMatrix = kwargs["modelMatrix"]
+    viewMatrix = kwargs["viewMatrix"]
+    projectionMatrix = kwargs["projectionMatrix"]
+    vpMatrix = kwargs["vpMatrix"]
+    normal = kwargs["normal"]
+
+    blowAmount = 0.2
+
+    vt = [vertex[0] + (normal[0] * blowAmount),
+          vertex[1] + (normal[1] * blowAmount),
+          vertex[2] + (normal[2] * blowAmount),
+          1]
+
+    temp1 = matrix_multiplier(vpMatrix, projectionMatrix)
+    temp2 = matrix_multiplier(temp1, viewMatrix)
+    temp3 = matrix_multiplier(temp2, modelMatrix)
+
+    vt =  matrix_vector_multiplier(temp3, vt)
+
+    vt = [vt[0]/vt[3],
+          vt[1]/vt[3],
+          vt[2]/vt[3]]
+
+    return vt
 
 def flatShader(**kwargs):
     
@@ -269,8 +305,8 @@ def yellowGlowShader(**kwargs):
     g += glowAmount * yellow[1]
     r += glowAmount * yellow[0]
 
-    if b >= 1.0: b = 1.0
-    if g >= 1.0: g = 1.0
-    if r >= 1.0: r = 1.0
+    b = min(b, 1.0)
+    g = min(g, 1.0)
+    r = min(r, 1.0)
 
     return r, g, b
