@@ -1,6 +1,11 @@
 from myNumpy import matrix_multiplier, matrix_vector_multiplier, dot_product, vector_normalize
 from math import sqrt
 
+# Funcion que evita que los colores se pasen de los limites establecidos
+def clamp(value, min_val=0.0, max_val=1.0):
+    return max(min_val, min(value, max_val))
+
+
 def vertexShader(vertex, **kwargs):
 
     # El Vertex Shader se lleva a cabo por cada v�rtice
@@ -175,6 +180,9 @@ def gouradShader(**kwargs):
     g *= intensity
     r *= intensity
 
+    b = clamp(b)
+    g = clamp(g)
+    r = clamp(r)
 
     if intensity > 0:
         return r, g, b
@@ -233,6 +241,9 @@ def toonShader(**kwargs):
     g *= intensity
     r *= intensity
 
+    b = clamp(b)
+    g = clamp(g)
+    r = clamp(r)
 
     if intensity > 0:
         return r, g, b
@@ -280,6 +291,9 @@ def redShader(**kwargs):
     g *= 0
     r *= intensity
 
+    b = clamp(b)
+    g = clamp(g)
+    r = clamp(r)
 
     if intensity > 0:
         return r, g, b
@@ -319,10 +333,6 @@ def yellowGlowShader(**kwargs):
     
     normal =  matrix_vector_multiplier(modelMatrix,normal) 
     normal = [normal[0], normal[1], normal[2]]
-
-
-    dLight = list(dLight)
-    dLight = [-x for x in dLight]
 
     camForward = (camMatrix[0][2],
                   camMatrix[1][2],

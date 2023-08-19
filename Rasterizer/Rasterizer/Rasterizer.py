@@ -11,6 +11,7 @@ rend = Renderer(width, height)
 rend.glClearColor(0.2, 0.2, 0.2)
 rend.glClear()
 
+rend.directionalLight = (1,1,0)
 
 # Se cargan los modelos con sus efectos a renderizar
 
@@ -19,7 +20,7 @@ model1 = Model("model.obj",
               rotate = (0,0,0),                    
               scale = (1.5, 1.5, 1.5))
 model1.LoadTexture("model.bmp")
-model1.SetShaders(shaders.vertexShader, shaders.yellowGlowShader)
+model1.SetShaders(shaders.vertexShader, shaders.gouradShader)
 rend.glAddModel(model1)
 
 # Renderizar el modelo en la imagen
