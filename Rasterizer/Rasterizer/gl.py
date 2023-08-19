@@ -57,6 +57,8 @@ class Renderer(object):
 
         self.activeTexture = None
 
+        self.activeModelMatrix = None
+
         self.glViewPort(0,0,self.width, self.height)
         self.glCamMatrix()
         self.glProjectionMatrix()
@@ -148,7 +150,8 @@ class Renderer(object):
                                                                  normals = normals,
                                                                  dLight = self.directionalLight,
                                                                  bCoords = bCoords,
-                                                                 camMatrix = self.camMatrix)
+                                                                 camMatrix = self.camMatrix,
+                                                                 modelMatrix = self.activeModelMatrix)
 
                                     self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
 
@@ -373,7 +376,10 @@ class Renderer(object):
 
 
     def glRender(self):
+
         # Esta funcion esta encargada de renderizar todo a la tabla de pixeles
+        
+        # Creamos los contenedores para la informacion de los vertices
         transformedVerts = []
         texCoords = []
         normals = []
@@ -390,7 +396,7 @@ class Renderer(object):
             self.vertexShader = model.vertexShader
             self.fragmentShader = model.fragmentShader
             self.activeTexture = model.texture
-            mMat = self.glModelMatrix(model.translate, model.rotate, model.scale)
+            self.activeModelMatrix = self.glModelMatrix(model.translate, model.rotate, model.scale)
 
             # Para cada cara del modelo
             for face in model.faces:
@@ -426,28 +432,28 @@ class Renderer(object):
                 # necesarias para usarlas dentro del shader.
                 if self.vertexShader:
                     v0 = self.vertexShader(v0, 
-                                            modelMatrix = mMat,
+                                            modelMatrix = self.activeModelMatrix,
                                             viewMatrix = self.viewMatrix,
                                             projectionMatrix = self.projectionMatrix,
                                             vpMatrix = self.vpMatrix,
                                             normal = vn0)
 
                     v1 = self.vertexShader(v1, 
-                                            modelMatrix = mMat,
+                                            modelMatrix = self.activeModelMatrix,
                                             viewMatrix = self.viewMatrix,
                                             projectionMatrix = self.projectionMatrix,
                                             vpMatrix = self.vpMatrix,
                                             normal = vn1)
 
                     v2 = self.vertexShader(v2, 
-                                            modelMatrix = mMat,
+                                            modelMatrix = self.activeModelMatrix,
                                             viewMatrix = self.viewMatrix,
                                             projectionMatrix = self.projectionMatrix,
                                             vpMatrix = self.vpMatrix,
                                             normal = vn2)
                     if vertCount == 4:
                         v3 = self.vertexShader(v3, 
-                                                modelMatrix = mMat,
+                                                modelMatrix = self.activeModelMatrix,
                                                 viewMatrix = self.viewMatrix,
                                                 projectionMatrix = self.projectionMatrix,
                                                 vpMatrix = self.vpMatrix,
@@ -473,9 +479,6 @@ class Renderer(object):
                     texCoords.append(vt0)
                     texCoords.append(vt2)
                     texCoords.append(vt3)
-
-
-
                 
 
                 # Agregamos las normales al listado de normales

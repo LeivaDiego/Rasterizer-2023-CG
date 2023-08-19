@@ -1,6 +1,5 @@
-
-from myNumpy import matrix_multiplier, matrix_vector_multiplier, dot_product
-
+from myNumpy import matrix_multiplier, matrix_vector_multiplier, dot_product, vector_normalize
+from math import sqrt
 
 def vertexShader(vertex, **kwargs):
 
@@ -28,6 +27,7 @@ def vertexShader(vertex, **kwargs):
 
     return vt
 
+
 def fragmentShader(**kwargs):
 
     # El Fragment Shader se lleva a cabo por cada pixel
@@ -36,6 +36,7 @@ def fragmentShader(**kwargs):
     texture = kwargs["texture"]
     tA, tB, tC = kwargs["texCoords"]
     u, v, w = kwargs["bCoords"]
+
 
     b = 1.0
     g = 1.0
@@ -53,6 +54,8 @@ def fragmentShader(**kwargs):
 
 
     return r, g, b
+
+
 
 def fatShader(vertex, **kwargs):
 
@@ -81,38 +84,53 @@ def fatShader(vertex, **kwargs):
 
     return vt
 
+
+
 def flatShader(**kwargs):
     
-    texCoords = kwargs["texCoords"]
     texture = kwargs["texture"]
     dLight = kwargs["dLight"]
-    normal = kwargs["normals"]
+    nA, nB, nC = kwargs["normals"]
+    tA, tB, tC = kwargs["texCoords"]
+    u, v, w = kwargs["bCoords"]
+    modelMatrix = kwargs["modelMatrix"]
 
     b = 1.0
     g = 1.0
     r = 1.0
-    
+
     if texture != None:
-        textureColor = texture.getColor(texCoords[0], texCoords[1])
+
+        tU = u * tA[0] + v * tB[0] + w * tC[0]
+        tV = u * tA[1] + v * tB[1] + w * tC[1]
+
+        textureColor = texture.getColor(tU, tV)
         b *= textureColor[2]
         g *= textureColor[1]
         r *= textureColor[0]
 
+    normal = [sum(x) for x in zip(nA, nB, nC)]
+    normal = vector_normalize(normal)
+
+    normal.append(0.0)
+
+    normal =  matrix_vector_multiplier(modelMatrix,normal) 
+    normal = [normal[0], normal[1], normal[2]]
 
     dLight = list(dLight)
     dLight = [-x for x in dLight]
     intensity = dot_product(normal, dLight)
 
     
-    b *= intensity
-    g *= intensity
-    r *= intensity
+    if intensity <= 0:
+        intensity = 0
 
+    # Asegura que los componentes de color no excedan 1.0
+    b = min(b * intensity, 1.0)
+    g = min(g * intensity, 1.0)
+    r = min(r * intensity, 1.0)
 
-    if intensity > 0:
-        return r, g, b
-    else:
-        return [0,0,0]
+    return r, g, b
 
 
 def gouradShader(**kwargs):
@@ -122,6 +140,7 @@ def gouradShader(**kwargs):
     nA, nB, nC = kwargs["normals"]
     dLight = kwargs["dLight"]
     u, v, w = kwargs["bCoords"]
+    modelMatrix = kwargs["modelMatrix"]
 
     b = 1.0
     g = 1.0
@@ -140,8 +159,12 @@ def gouradShader(**kwargs):
     # Se calcula la normal para el punto
     normal = [u * nA[0] + v * nB[0] + w * nC[0],
               u * nA[1] + v * nB[1] + w * nC[1],
-              u * nA[2] + v * nB[2] + w * nC[2]]
+              u * nA[2] + v * nB[2] + w * nC[2],
+              0]
     
+    normal =  matrix_vector_multiplier(modelMatrix,normal) 
+    normal = [normal[0], normal[1], normal[2]]
+
 
     dLight = list(dLight)
     dLight = [-x for x in dLight]
@@ -165,6 +188,8 @@ def toonShader(**kwargs):
     nA, nB, nC = kwargs["normals"]
     dLight = kwargs["dLight"]
     u, v, w = kwargs["bCoords"]
+    modelMatrix = kwargs["modelMatrix"]
+
 
     b = 1.0
     g = 1.0
@@ -183,8 +208,11 @@ def toonShader(**kwargs):
     # Se calcula la normal para el punto
     normal = [u * nA[0] + v * nB[0] + w * nC[0],
               u * nA[1] + v * nB[1] + w * nC[1],
-              u * nA[2] + v * nB[2] + w * nC[2]]
+              u * nA[2] + v * nB[2] + w * nC[2],
+              0]
     
+    normal =  matrix_vector_multiplier(modelMatrix,normal) 
+    normal = [normal[0], normal[1], normal[2]]
 
     dLight = list(dLight)
     dLight = [-x for x in dLight]
@@ -218,6 +246,7 @@ def redShader(**kwargs):
     nA, nB, nC = kwargs["normals"]
     dLight = kwargs["dLight"]
     u, v, w = kwargs["bCoords"]
+    modelMatrix = kwargs["modelMatrix"]
 
     b = 1.0
     g = 1.0
@@ -236,8 +265,11 @@ def redShader(**kwargs):
     # Se calcula la normal para el punto
     normal = [u * nA[0] + v * nB[0] + w * nC[0],
               u * nA[1] + v * nB[1] + w * nC[1],
-              u * nA[2] + v * nB[2] + w * nC[2]]
+              u * nA[2] + v * nB[2] + w * nC[2],
+              0]
     
+    normal =  matrix_vector_multiplier(modelMatrix,normal) 
+    normal = [normal[0], normal[1], normal[2]]
 
     dLight = list(dLight)
     dLight = [-x for x in dLight]
@@ -263,6 +295,7 @@ def yellowGlowShader(**kwargs):
     dLight = kwargs["dLight"]
     u, v, w = kwargs["bCoords"]
     camMatrix = kwargs["camMatrix"]
+    modelMatrix = kwargs["modelMatrix"]
 
     b = 1.0
     g = 1.0
@@ -281,19 +314,21 @@ def yellowGlowShader(**kwargs):
     # Se calcula la normal para el punto
     normal = [u * nA[0] + v * nB[0] + w * nC[0],
               u * nA[1] + v * nB[1] + w * nC[1],
-              u * nA[2] + v * nB[2] + w * nC[2]]
+              u * nA[2] + v * nB[2] + w * nC[2],
+              0]
     
+    normal =  matrix_vector_multiplier(modelMatrix,normal) 
+    normal = [normal[0], normal[1], normal[2]]
+
 
     dLight = list(dLight)
     dLight = [-x for x in dLight]
-    intensity = dot_product(normal, dLight)
-
-    if intensity <= 0: intensity = 0
 
     camForward = (camMatrix[0][2],
                   camMatrix[1][2],
                   camMatrix[2][2])
 
+    # El primer valor se puede variar para que el brillo ocupe mas o menos del model
     glowAmount = 1 - dot_product(normal, camForward)
 
     if glowAmount <=0:
