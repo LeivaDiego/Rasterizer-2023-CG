@@ -8,7 +8,7 @@ def clamp(value, min_val=0.0, max_val=1.0):
 
 def vertexShader(vertex, **kwargs):
 
-    # El Vertex Shader se lleva a cabo por cada v�rtice
+    # El Vertex Shader se lleva a cabo por cada vertice
     
     modelMatrix = kwargs["modelMatrix"]
     viewMatrix = kwargs["viewMatrix"]
@@ -36,7 +36,7 @@ def vertexShader(vertex, **kwargs):
 def fragmentShader(**kwargs):
 
     # El Fragment Shader se lleva a cabo por cada pixel
-    # que se renderizar� en la pantalla.
+    # que se renderizara en la pantalla.
 
     texture = kwargs["texture"]
     tA, tB, tC = kwargs["texCoords"]

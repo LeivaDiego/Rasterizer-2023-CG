@@ -11,17 +11,17 @@ class Obj(object):
         self.normals = []
         self.faces = []
 
-        # Por cada línea en el archivo
+        # Por cada linea en el archivo
         for line in self.lines:
 
-            # Si la línea no cuenta con un prefijo y un valor,
-            # seguimos a la siguiente línea
+            # Si la linea no cuenta con un prefijo y un valor,
+            # seguimos a la siguiente linea
             try:
                 prefix, value = line.split(" ",1)
             except: # si encuentra una linea vacia, se pasa a la siguiente linea
                 continue
             
-            # Dependiendo del prefijo, parseamos y guardamos la información
+            # Dependiendo del prefijo, parseamos y guardamos la informacion
             # en el contenedor correcto
             if prefix == "v": # Vertices
                 self.vertices.append(list(map(float,value.split(" "))))

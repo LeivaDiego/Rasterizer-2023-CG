@@ -41,9 +41,9 @@ def matrix_multiplier(matrixA, matrixB):
     # Multiplica dos matrices y devuelve el resultado
     # matrixA: Primera matriz (fila x columna)
     # matrixB: Segunda matriz (fila x columna)
-    # Retorna: Resultado de la multiplicación (fila x columna)
+    # Retorna: Resultado de la multiplicacion (fila x columna)
 
-    # Obtener el número de filas y columnas de cada matriz
+    # Obtener el numero de filas y columnas de cada matriz
     rowsA = len(matrixA)
     colsA = len(matrixA[0])
     rowsB = len(matrixB)
@@ -51,12 +51,12 @@ def matrix_multiplier(matrixA, matrixB):
 
     # Verificar si las matrices son multiplicables
     if colsA != rowsB:
-        raise ValueError("Las dimensiones de las matrices no permiten su multiplicación.")
+        raise ValueError("Las dimensiones de las matrices no permiten su multiplicacion.")
 
-    # Crear una matriz vacía para almacenar el resultado
+    # Crear una matriz vacia para almacenar el resultado
     matrixC = [[0 for _ in range(colsB)] for _ in range(rowsA)]
 
-    # Realizar la multiplicación de matrices
+    # Realizar la multiplicacion de matrices
     for i in range(rowsA):
         for j in range(colsB):
             for k in range(colsA):
@@ -66,23 +66,23 @@ def matrix_multiplier(matrixA, matrixB):
 
 def matrix_vector_multiplier(matrix, vector):
     # Multiplica una matriz por un vector y devuelve el resultado
-    # matrix: Matriz de multiplicación (fila x columna)
-    # vector: Vector de multiplicación (1 x columna)
-    # Retorna: Resultado de la multiplicación (1 x columna)
+    # matrix: Matriz de multiplicacion (fila x columna)
+    # vector: Vector de multiplicacion (1 x columna)
+    # Retorna: Resultado de la multiplicacion (1 x columna)
 
-    # Obtener el número de filas y columnas de la matriz y el vector
+    # Obtener el numero de filas y columnas de la matriz y el vector
     rows = len(matrix)
     cols = len(matrix[0])
     size = len(vector)
 
     # Verificar si la matriz y el vector son multiplicables
     if cols != size:
-        raise ValueError("Las dimensiones de la matriz y el vector no permiten su multiplicación.")
+        raise ValueError("Las dimensiones de la matriz y el vector no permiten su multiplicacion.")
 
-    # Crear un vector vacío para almacenar resultados
+    # Crear un vector vacio para almacenar resultados
     newVector = [0 for _ in range(rows)]
 
-    # Realizar la multiplicación de matriz por vector
+    # Realizar la multiplicacion de matriz por vector
     for i in range(rows):
         for j in range(cols):
             newVector[i] += matrix[i][j] * vector[j]
@@ -91,13 +91,13 @@ def matrix_vector_multiplier(matrix, vector):
 
 def identity_matrix(n):
     # Genera una matriz identidad de tamaño n x n
-    # n: Tamaño de la matriz
+    # n: Tamano de la matriz
     # Retorna: Matriz identidad n x n
     return [[1 if i == j else 0 for j in range(n)] for i in range(n)]
 
 
 def inverse_matrix(matrix):
-    # Calcula la matriz inversa usando eliminación gaussiana
+    # Calcula la matriz inversa usando eliminacion gaussiana
     # matrix: Matriz original a invertir (fila x columna)
     # Retorna: Matriz inversa resultante (fila x columna)
 
@@ -105,7 +105,7 @@ def inverse_matrix(matrix):
     # Crear una matriz aumentada con la matriz original y la matriz identidad
     augmented_matrix = [row + identity_matrix(n)[i] for i, row in enumerate(matrix)]
 
-    # Realizar la eliminación gaussiana para calcular la inversa
+    # Realizar la eliminacion gaussiana para calcular la inversa
     for i in range(n):
         pivot = augmented_matrix[i][i]
         for j in range(2 * n):
