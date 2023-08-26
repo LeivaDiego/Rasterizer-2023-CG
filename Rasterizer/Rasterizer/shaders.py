@@ -1,4 +1,4 @@
-from myNumpy import matrix_multiplier, matrix_vector_multiplier, dot_product, vector_normalize
+from myNumpy import cross_product, matrix_multiplier, matrix_vector_multiplier, dot_product, vector_normalize
 from math import sqrt
 
 # Funcion que evita que los colores se pasen de los limites establecidos
@@ -190,6 +190,88 @@ def gouradShader(**kwargs):
         return [0,0,0]
 
 
+def normalMapShader(**kwargs):
+    texture = kwargs["texture"]
+    normalMap = kwargs["normalMap"]
+    tA, tB, tC = kwargs["texCoords"]
+    nA, nB, nC = kwargs["normals"]
+    dLight = kwargs["dLight"]
+    u, v, w = kwargs["bCoords"]
+    modelMatrix = kwargs["modelMatrix"]
+    tangent = kwargs["tangent"]
+
+    b = 1.0
+    g = 1.0
+    r = 1.0
+
+    tU = u * tA[0] + v * tB[0] + w * tC[0]
+    tV = u * tA[1] + v * tB[1] + w * tC[1]
+
+
+    if texture != None:
+        textureColor = texture.getColor(tU, tV)
+        b *= textureColor[2]
+        g *= textureColor[1]
+        r *= textureColor[0]
+
+    # Se calcula la normal para el punto
+    normal = [u * nA[0] + v * nB[0] + w * nC[0],
+                u * nA[1] + v * nB[1] + w * nC[1],
+                u * nA[2] + v * nB[2] + w * nC[2],
+                0]
+    
+    normal =  matrix_vector_multiplier(modelMatrix,normal) 
+    normal = [normal[0], normal[1], normal[2]]
+
+    dLight = list(dLight)
+    dLight = [-x for x in dLight]
+
+    if normalMap:
+        texNormal = normalMap.getColor(tU, tV)
+        texNormal = [texNormal[0] * 2 - 1,
+                     texNormal[1] * 2 - 1,
+                     texNormal[2] * 2 - 1]
+
+        texNormal = vector_normalize(texNormal)
+
+        tangent = [tangent[0], tangent[1], tangent[2], 0]
+        tangent = matrix_vector_multiplier(modelMatrix, tangent)
+        tangent = [tangent[0], tangent[1], tangent[2]]
+
+        bitangent = cross_product(normal, tangent)
+        bitangent = vector_normalize(bitangent)
+
+        tangent = cross_product(normal, bitangent)
+        tangent = vector_normalize(tangent)
+
+        tangentMatirx = [[tangent[0], bitangent[0], normal[0]],
+                         [tangent[1], bitangent[1], normal[1]],
+                         [tangent[2], bitangent[2], normal[2]]]
+
+        texNormal = matrix_vector_multiplier(tangentMatirx, texNormal)
+        texNormal = vector_normalize(texNormal)
+
+        normal = texNormal
+
+    
+    intensity = dot_product(normal,dLight)
+    
+    intensity = clamp(intensity)
+
+    b *= intensity
+    g *= intensity
+    r *= intensity
+
+    b = clamp(b)
+    g = clamp(g)
+    r = clamp(r)
+
+    if intensity > 0:
+        return r, g, b
+    else:
+        return [0,0,0]
+
+
 def toonShader(**kwargs):
     texture = kwargs["texture"]
     tA, tB, tC = kwargs["texCoords"]
@@ -301,7 +383,6 @@ def redShader(**kwargs):
         return [0,0,0]
 
 
-
 def yellowGlowShader(**kwargs):
     texture = kwargs["texture"]
     tA, tB, tC = kwargs["texCoords"]
@@ -315,11 +396,10 @@ def yellowGlowShader(**kwargs):
     g = 1.0
     r = 1.0
 
+    tU = u * tA[0] + v * tB[0] + w * tC[0]
+    tV = u * tA[1] + v * tB[1] + w * tC[1]
+
     if texture != None:
-
-        tU = u * tA[0] + v * tB[0] + w * tC[0]
-        tV = u * tA[1] + v * tB[1] + w * tC[1]
-
         textureColor = texture.getColor(tU, tV)
         b *= textureColor[2]
         g *= textureColor[1]

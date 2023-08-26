@@ -1,9 +1,8 @@
 import shaders
-from obj import Obj
 from gl import Renderer, Model
 
 # La resolucion de la imagen generada
-width = 540    # Ancho en pixeles
+width = 960    # Ancho en pixeles
 height = 540   # Alto en pixeles
 
 
@@ -20,13 +19,29 @@ rend.directionalLight = (0,0,-1)
 
 # Se cargan los modelos con sus efectos a renderizar
 model1 = Model("models/model.obj",
-              translate = (0,0,-5),                
+              translate = (-3,0,-5),                
               rotate = (0,0,0),                    
               scale = (1.5, 1.5, 1.5))
 model1.LoadTexture("textures/model.bmp")
-model1.SetShaders(shaders.vertexShader, shaders.gouradShader)
+model1.LoadNormalMap("normals/model_normal.bmp")
+model1.SetShaders(shaders.vertexShader, shaders.normalMapShader)
 rend.glAddModel(model1)
 
+model2 = Model("models/model.obj",
+              translate = (0,0,-5),                
+              rotate = (0,0,0),                    
+              scale = (1.5, 1.5, 1.5))
+model2.LoadTexture("textures/model.bmp")
+model2.SetShaders(shaders.vertexShader, shaders.gouradShader)
+rend.glAddModel(model2)
+
+model3 = Model("models/model.obj",
+              translate = (3,0,-5),                
+              rotate = (0,0,0),                    
+              scale = (1.5, 1.5, 1.5))
+model3.LoadTexture("textures/model.bmp")
+model3.SetShaders(shaders.vertexShader, shaders.toonShader)
+rend.glAddModel(model3)
 
 # Renderizar el modelo en la imagen
 rend.glRender()
