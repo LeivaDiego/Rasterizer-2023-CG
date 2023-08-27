@@ -1,5 +1,5 @@
 from myNumpy import cross_product, matrix_multiplier, matrix_vector_multiplier, dot_product, vector_normalize
-from math import sqrt
+from math import sin, sqrt, pi
 
 # Funcion que evita que los colores se pasen de los limites establecidos
 def clamp(value, min_val=0.0, max_val=1.0):
@@ -450,11 +450,9 @@ def multiTextureShader(**kwargs):
     g = 1.0
     r = 1.0
 
-    # Calculate the texture coordinates
+    # Calcula las coordenadas de textura
     tU = u * tA[0] + v * tB[0] + w * tC[0]
     tV = u * tA[1] + v * tB[1] + w * tC[1]
-
-
 
     if texture != None:
         textureColor = texture.getColor(tU, tV)
@@ -493,7 +491,6 @@ def multiTextureShader(**kwargs):
     dLight = [-x for x in dLight]
     intensity = dot_product(normal, dLight)
     
-
     r *= intensity
     g *= intensity
     b *= intensity
@@ -503,8 +500,85 @@ def multiTextureShader(**kwargs):
     g = clamp(g)
     b = clamp(b)
 
-    # Check if the intensity is greater than 0 to return the values, otherwise return [0,0,0]
+    # Revisa si la intensidad es mayor a 0 de lo contrario retorna negro
     if intensity > 0:
         return r, g, b
     else:
         return [0, 0, 0]
+
+
+def StarmanShader(**kwargs):
+    # Se extraen los argumentos clave del diccionario kwargs
+    texture = kwargs["texture"]
+    tA, tB, tC = kwargs["texCoords"]
+    nA, nB, nC = kwargs["normals"]
+    dLight = kwargs["dLight"]
+    u, v, w = kwargs["bCoords"]
+    camMatrix = kwargs["camMatrix"]
+    modelMatrix = kwargs["modelMatrix"]
+
+    # Valores iniciales de color
+    b = 1.0
+    g = 1.0
+    r = 1.0
+
+    tU = u * tA[0] + v * tB[0] + w * tC[0]
+    tV = u * tA[1] + v * tB[1] + w * tC[1]
+
+    # Si hay una textura, se mezcla con el color base
+    if texture != None:
+        textureColor = texture.getColor(tU, tV)
+        b *= textureColor[2]
+        g *= textureColor[1]
+        r *= textureColor[0]
+
+    # Se calcula la normal para el punto
+    normal = [u * nA[0] + v * nB[0] + w * nC[0],
+              u * nA[1] + v * nB[1] + w * nC[1],
+              u * nA[2] + v * nB[2] + w * nC[2],
+              0]
+
+    normal = matrix_vector_multiplier(modelMatrix, normal)
+    normal = [normal[0], normal[1], normal[2]]
+
+    dLight = list(dLight)
+    dLight = [-x for x in dLight]
+    intensity = dot_product(normal, dLight)
+
+    # Si la intensidad es negativa, se establece en cero
+    if intensity <= 0:
+        intensity = 0
+
+    # Se obtiene la dirección hacia adelante de la cámara desde la matriz de la cámara
+    camForward = (camMatrix[0][2],
+                  camMatrix[1][2],
+                  camMatrix[2][2])
+
+    # Calcula la cantidad de resplandor en función de la normal y la dirección de la cámara
+    glowAmount = 1.4 - dot_product(normal, camForward)
+    
+    # Si el resplandor es negativo, se establece en cero
+    if glowAmount <= 0:
+        glowAmount = 0
+
+
+    # Efecto de brillo arcoíris basado en las coordenadas de textura
+    # Dependiendo de las coordenadas de la diagonal se generan los valores para rojo, verde y azul, que varian a partir de 
+    # un valor sinusoidal, esto para generar un cambio sutil en las fases de colores
+    diagonalValue = (tU + tV) * 0.5                     # Calcula el valor diagonal promedio en coordenadas de textura
+    rGlow = abs(sin(diagonalValue * 2 * pi))            # Calcula el componente rojo del brillo arcoíris
+    gGlow = abs(sin((diagonalValue + 1/3.0) * 2 * pi))  # Calcula el componente verde del brillo arcoíris
+    bGlow = abs(sin((diagonalValue + 2/3.0) * 2 * pi))  # Calcula el componente azul del brillo arcoíris
+
+    # Interpolación de colores para suavizar el brillo
+    b += glowAmount * bGlow 
+    g += glowAmount * gGlow  
+    r += glowAmount * rGlow  
+
+    # Limitando a valores permitidos los valores r,g,b
+    r = clamp(r)
+    g = clamp(g)
+    b = clamp(b)
+
+    # Retorna los componentes de color modificados
+    return r, g, b

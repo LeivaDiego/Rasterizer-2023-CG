@@ -20,11 +20,10 @@ rend.directionalLight = (0,0,-1)
 # Se cargan los modelos con sus efectos a renderizar
 model1 = Model("models/model.obj",
               translate = (0,0,-5),                
-              rotate = (0,0,0),                    
+              rotate = (0,50,0),                    
               scale = (1.5, 1.5, 1.5))
 model1.LoadTexture("textures/model.bmp")
-model1.LoadExtraTexture("textures/magma.bmp")
-model1.SetShaders(shaders.vertexShader, shaders.multiTextureShader)
+model1.SetShaders(shaders.vertexShader, shaders.StarmanShader)
 rend.glAddModel(model1)
 
 # Renderizar el modelo en la imagen
