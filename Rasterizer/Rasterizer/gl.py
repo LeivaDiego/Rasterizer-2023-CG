@@ -160,8 +160,7 @@ class Renderer(object):
 
         deltaUV1 = subtract_vector(texCoords[1], texCoords[0])
         deltaUV2 = subtract_vector(texCoords[2], texCoords[0])
-
-        tangent = None
+        tangent = []
 
         try:
             f = 1.0 / (deltaUV1[0] * deltaUV2[1] - deltaUV2[0] * deltaUV1[1])

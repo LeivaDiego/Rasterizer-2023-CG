@@ -578,7 +578,6 @@ def multiTextureShader(**kwargs):
 
 
 def GlowPatternsShader(glowType, **kwargs):
-    # Se extraen los argumentos clave del diccionario kwargs
     texture = kwargs["texture"]
     tA, tB, tC = kwargs["texCoords"]
     nA, nB, nC = kwargs["normals"]
@@ -732,4 +731,113 @@ def TrypophobiaShader(**kwargs):
     g = clamp(g)
     r = clamp(r)
 
+    return r, g, b
+
+
+def UltraShader(glowType, **kwargs):
+    texture = kwargs["texture"]
+    extraTex = kwargs["extraTexture"]
+    tA, tB, tC = kwargs["texCoords"]
+    nA, nB, nC = kwargs["normals"]
+    dLight = kwargs["dLight"]
+    u, v, w = kwargs["bCoords"]
+    camMatrix = kwargs["camMatrix"]
+    modelMatrix = kwargs["modelMatrix"]
+    
+
+    # Valores iniciales de color
+    b = 1.0
+    g = 1.0
+    r = 1.0
+
+    tU = u * tA[0] + v * tB[0] + w * tC[0]
+    tV = u * tA[1] + v * tB[1] + w * tC[1]
+
+    # Si hay una textura, se mezcla con el color base
+    if texture != None:
+        textureColor = texture.getColor(tU, tV)
+        b *= textureColor[2]
+        g *= textureColor[1]
+        r *= textureColor[0]
+
+    # Obtener el color de la textura extra
+    if extraTex != None:
+        extraColor = extraTex.getColor(tU, tV)
+        extraR = extraColor[0]
+        extraG = extraColor[1]
+        extraB = extraColor[2]
+    
+        # Mezcla de colores
+        blendFactor = 0.5
+        r = (r * blendFactor) + (extraR * (1 - blendFactor))
+        g = (g * blendFactor) + (extraG * (1 - blendFactor))
+        b = (b * blendFactor) + (extraB * (1 - blendFactor))
+
+
+      # Se calcula la normal para el punto
+    normal = [u * nA[0] + v * nB[0] + w * nC[0],
+              u * nA[1] + v * nB[1] + w * nC[1],
+              u * nA[2] + v * nB[2] + w * nC[2],
+              0]
+
+    normal = matrix_vector_multiplier(modelMatrix, normal)
+    normal = [normal[0], normal[1], normal[2]]
+
+    dLight = list(dLight)
+    dLight = [-x for x in dLight]
+    intensity = dot_product(normal, dLight)
+
+
+    # Si la intensidad es negativa, se establece en cero
+    if intensity <= 0:
+        intensity = 0
+
+    # Se obtiene la direccion hacia adelante de la camara desde la matriz de la camara
+    camForward = (camMatrix[0][2],
+                  camMatrix[1][2],
+                  camMatrix[2][2])
+
+    # Calcula la cantidad de resplandor en funcion de la normal y la direccion de la camara
+    glowAmount = 1.4 - dot_product(normal, camForward)
+    
+    # Si el brillo es negativo, se establece en cero
+    if glowAmount <= 0:
+        glowAmount = 0
+
+    # Efecto de brillo basado en las coordenadas de textura
+    # Dependiendo de las coordenadas se generan los valores para rojo, verde y azul, que varian a partir de 
+    # un valor sinusoidal, esto para generar un cambio sutil en las fases de colores
+
+    # Calcula el valor diagonal promedio en coordenadas de textura                   
+    diagonalValue = (tU + tV) * 0.5 
+
+    if glowType == "starman":# Efecto arcoiris
+        rGlow = abs(sin(diagonalValue * 2 * pi))            
+        gGlow = abs(sin((diagonalValue + 1/3.0) * 2 * pi))  
+        bGlow = abs(sin((diagonalValue + 2/3.0) * 2 * pi))
+
+    elif glowType == "infernix":# Efecto escudo para "los malos"
+        rGlow = abs(sin(intensity * 2 * pi))
+        gGlow = 0
+        bGlow = 0 
+        maxGreen = 0.5  
+        gGlow = min(gGlow, maxGreen)
+
+    elif glowType == "celestia":# Efecto escudo para "los buenos"
+        rGlow = 0  
+        gGlow = abs(sin((diagonalValue + 1/3.0) * 2 * pi)) * 0.5  
+        bGlow = abs(sin((diagonalValue + 2/3.0) * 2 * pi))
+
+
+    # Interpolacion de colores para difuminar el brillo
+    b += glowAmount * bGlow 
+    g += glowAmount * gGlow  
+    r += glowAmount * rGlow  
+
+    # Limitando a valores permitidos los valores r,g,b
+    r = clamp(r)
+    g = clamp(g)
+    b = clamp(b)
+
+    # Retorna los componentes de color modificados
     return r, g, b
