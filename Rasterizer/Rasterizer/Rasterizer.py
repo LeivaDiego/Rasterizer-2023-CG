@@ -14,16 +14,16 @@ rend.glBackgroundTexture("backgrounds/space.bmp")
 rend.glClearBackground()
 
 # Se mueve la posicion de la luz
-rend.directionalLight = (0,0,-1)
+rend.directionalLight = (-1,0,0)
 
 
 # Se cargan los modelos con sus efectos a renderizar
 model1 = Model("models/model.obj",
               translate = (0,0,-5),                
-              rotate = (0,0,0),                    
+              rotate = (0,30,0),                    
               scale = (1.5, 1.5, 1.5))
 model1.LoadTexture("textures/model.bmp")
-model1.SetShaders(shaders.twistShader, lambda **kwargs: shaders.GlowPatternsShader(glowType='starman',**kwargs))
+model1.SetShaders(shaders.vertexShader, shaders.TrypophobiaShader)
 rend.glAddModel(model1)
 
 # Renderizar el modelo en la imagen

@@ -213,9 +213,12 @@ class Renderer(object):
                                                                  camMatrix = self.camMatrix,
                                                                  modelMatrix = self.activeModelMatrix,
                                                                  tangent = tangent,
-                                                                 extraTexture = self.activeExtraTexture)
-
-                                    self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
+                                                                 extraTexture = self.activeExtraTexture,
+                                                                 verts = untransformedVerts)
+                                    if colorP:
+                                        self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
+                                    else:
+                                        pass
 
                                 else:
                                     self.glPoint(x, y, colorP)

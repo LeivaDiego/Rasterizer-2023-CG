@@ -1,9 +1,12 @@
+import random
 from myNumpy import cross_product, matrix_multiplier, matrix_vector_multiplier, dot_product, vector_normalize
-from math import sin, cos, pi
+from math import sin, cos, pi, sqrt
 
 # Funcion que evita que los colores se pasen de los limites establecidos
 def clamp(value, min_val=0.0, max_val=1.0):
     return max(min_val, min(value, max_val))
+
+
 
 #---------------------------------------Vertex Shaders---------------------------------------
 
@@ -69,14 +72,13 @@ def waveShader(vertex, **kwargs):
     vpMatrix = kwargs["vpMatrix"]
 
     # Definir multiples amplitudes y frecuencias
-    amplitudes = [0.03]
-    frequencies = [25.00]
-    phases = [pi/2]
+    amplitude = 0.03
+    frequency = 25.00
+    phase = pi/2
 
     # Calcular la suma de las ondas
     y_offset = 0
-    for amp, freq, phase in zip(amplitudes, frequencies, phases):
-        y_offset += amp * sin(freq * vertex[0] + phase)
+    y_offset += amplitude * sin(frequency * vertex[0] + phase)
 
     vt = [
         vertex[0],
@@ -104,7 +106,7 @@ def twistShader(vertex, **kwargs):
     projectionMatrix = kwargs["projectionMatrix"]
     vpMatrix = kwargs["vpMatrix"]
 
-    angle = pi / 4  # Ángulo de torsion
+    angle = pi / 4  # angulo de torsion
 
     cosA = cos(angle * vertex[1])
     sinA = sin(angle * vertex[1])
@@ -127,6 +129,9 @@ def twistShader(vertex, **kwargs):
           vt[2]/vt[3]]
 
     return vt
+
+
+
 #--------------------------------------Fragment Shaders--------------------------------------
 
 def fragmentShader(**kwargs):
@@ -453,7 +458,6 @@ def yellowGlowShader(**kwargs):
     texture = kwargs["texture"]
     tA, tB, tC = kwargs["texCoords"]
     nA, nB, nC = kwargs["normals"]
-    dLight = kwargs["dLight"]
     u, v, w = kwargs["bCoords"]
     camMatrix = kwargs["camMatrix"]
     modelMatrix = kwargs["modelMatrix"]
@@ -663,4 +667,69 @@ def GlowPatternsShader(glowType, **kwargs):
     b = clamp(b)
 
     # Retorna los componentes de color modificados
+    return r, g, b
+
+
+def TrypophobiaShader(**kwargs):
+
+    texture = kwargs["texture"]
+    dLight = kwargs["dLight"]
+    nA, nB, nC = kwargs["normals"]
+    tA, tB, tC = kwargs["texCoords"]
+    u, v, w = kwargs["bCoords"]
+    modelMatrix = kwargs["modelMatrix"]
+    verts = kwargs["verts"]
+
+    # Calcular el centroide del triángulo
+    centroid = [(v[0] + v[1] + v[2]) / 3 for v in zip(*verts)]
+    
+    # Utilizar el centroide para determinar si renderizar o no
+    random.seed(str(centroid))  # usa el centroide como semilla
+    if random.random() < 0.2:   # probabilidad de ser transparente
+        return None
+
+    # Tomamos la normal promedio de la cara, no interpolada
+    normal = [sum(x) for x in zip(nA, nB, nC)]
+    magnitude = sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2)
+    normal = [n/magnitude for n in normal]  # normalizamos
+
+    # Color base como en Minecraft
+    b = 1.0
+    g = 1.0
+    r = 1.0
+
+    tU = u * tA[0] + v * tB[0] + w * tC[0]
+    tV = u * tA[1] + v * tB[1] + w * tC[1]
+
+    # Si hay una textura, se mezcla con el color base
+    if texture is not None:
+        textureColor = texture.getColor(tU, tV)
+        b *= textureColor[2]
+        g *= textureColor[1]
+        r *= textureColor[0]
+
+    normal = [sum(x) for x in zip(nA, nB, nC)]
+    normal = vector_normalize(normal)
+
+    normal.append(0.0)
+
+    normal =  matrix_vector_multiplier(modelMatrix,normal) 
+    normal = [normal[0], normal[1], normal[2]]
+
+    dLight = list(dLight)
+    dLight = [-x for x in dLight]
+    intensity = dot_product(normal, dLight)
+    
+    if intensity <= 0:
+        intensity = 0
+
+    b *= intensity
+    g *= intensity
+    r *= intensity
+
+    # Asegura que los componentes de color no excedan 1.0
+    b = clamp(b)
+    g = clamp(g)
+    r = clamp(r)
+
     return r, g, b
