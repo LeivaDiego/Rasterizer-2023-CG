@@ -624,7 +624,7 @@ def ShieldShader(glowType, **kwargs):
                   camMatrix[2][2])
 
     # Calcula la cantidad de resplandor en funcion de la normal y la direccion de la camara
-    glowAmount = 1.4 - dot_product(normal, camForward)
+    glowAmount = 1 - dot_product(normal, camForward)
     
     # Si el brillo es negativo, se establece en cero
     if glowAmount <= 0:
@@ -684,7 +684,7 @@ def TrypophobiaShader(**kwargs):
     
     # Utilizar el centroide para determinar si renderizar o no
     random.seed(str(centroid))  # usa el centroide como semilla
-    if random.random() < 0.2:   # probabilidad de ser transparente
+    if random.random() < 0.25:   # probabilidad de ser transparente
         return None
 
     # Tomamos la normal promedio de la cara, no interpolada
@@ -843,13 +843,15 @@ def UltraShader(glowType, **kwargs):
     return r, g, b
 
 
+
 def BlastShader(glowColor, **kwargs):
+
+    # Convierte el color de brillo al rango de 0 a 1
+    glowColor = [x / 255.0 for x in glowColor]
+
     texture = kwargs["texture"]
     tA, tB, tC = kwargs["texCoords"]
-    nA, nB, nC = kwargs["normals"]
     u, v, w = kwargs["bCoords"]
-    camMatrix = kwargs["camMatrix"]
-    modelMatrix = kwargs["modelMatrix"]
 
     b = 1.0
     g = 1.0
@@ -864,29 +866,13 @@ def BlastShader(glowColor, **kwargs):
         g *= textureColor[1]
         r *= textureColor[0]
 
-    # Se calcula la normal para el punto
-    normal = [u * nA[0] + v * nB[0] + w * nC[0],
-              u * nA[1] + v * nB[1] + w * nC[1],
-              u * nA[2] + v * nB[2] + w * nC[2],
-              0]
-    
-    normal = matrix_vector_multiplier(modelMatrix, normal)
-    normal = [normal[0], normal[1], normal[2]]
+    # Calcula el factor de degradado usando la coordenada u de la textura
+    gradientFactor = tU
 
-    camForward = (camMatrix[0][2],
-                  camMatrix[1][2],
-                  camMatrix[2][2])
-
-    # El primer valor se puede variar para que el brillo ocupe más o menos del modelo
-    glowAmount = 1 - dot_product(normal, camForward)
-
-    if glowAmount <= 0:
-        glowAmount = 0
-
-    # Utiliza el color de brillo especificado
-    b += glowAmount * glowColor[2]
-    g += glowAmount * glowColor[1]
-    r += glowAmount * glowColor[0]
+    # Interpola entre el color original y el color de brillo
+    b = (1 - gradientFactor) * b + gradientFactor * glowColor[2]
+    g = (1 - gradientFactor) * g + gradientFactor * glowColor[1]
+    r = (1 - gradientFactor) * r + gradientFactor * glowColor[0]
 
     b = min(b, 1.0)
     g = min(g, 1.0)
