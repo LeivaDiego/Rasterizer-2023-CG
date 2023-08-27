@@ -61,6 +61,43 @@ def fatShader(vertex, **kwargs):
 
     return vt
 
+
+def waveShader(vertex, **kwargs):
+    modelMatrix = kwargs["modelMatrix"]
+    viewMatrix = kwargs["viewMatrix"]
+    projectionMatrix = kwargs["projectionMatrix"]
+    vpMatrix = kwargs["vpMatrix"]
+
+    # Definir multiples amplitudes y frecuencias
+    amplitudes = [0.03]
+    frequencies = [25.00]
+    phases = [pi/2]
+
+    # Calcular la suma de las ondas
+    y_offset = 0
+    for amp, freq, phase in zip(amplitudes, frequencies, phases):
+        y_offset += amp * sin(freq * vertex[0] + phase)
+
+    vt = [
+        vertex[0],
+        vertex[1] + y_offset,
+        vertex[2],
+        1
+    ]
+
+    temp1 = matrix_multiplier(vpMatrix, projectionMatrix)
+    temp2 = matrix_multiplier(temp1, viewMatrix)
+    temp3 = matrix_multiplier(temp2, modelMatrix)
+
+    vt =  matrix_vector_multiplier(temp3, vt)
+
+    vt = [vt[0]/vt[3],
+          vt[1]/vt[3],
+          vt[2]/vt[3]]
+
+    return vt
+
+
 #--------------------------------------Fragment Shaders--------------------------------------
 
 def fragmentShader(**kwargs):
