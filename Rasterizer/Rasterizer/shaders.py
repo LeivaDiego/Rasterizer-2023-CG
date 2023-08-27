@@ -598,3 +598,101 @@ def GlowPatternsShader(glowType, **kwargs):
 
     # Retorna los componentes de color modificados
     return r, g, b
+
+def ThermalCamShader(thermal, **kwargs):
+    nA, nB, nC = kwargs["normals"]
+    dLight = kwargs["dLight"]
+    u, v, w = kwargs["bCoords"]
+    camMatrix = kwargs["camMatrix"]
+    modelMatrix = kwargs["modelMatrix"]
+
+    # Referencia de la paleta iron. https://jsfiddle.net/ozkh6bp1
+    iron_palette = [
+        (0, 0, 0),(0, 0, 36),(0, 0, 51),(0, 0, 66),(0, 0, 81),(2, 0, 90),(4, 0, 99),(7, 0, 106),(11, 0, 115),(14, 0, 119),(20, 0, 123),
+        (27, 0, 128),(33, 0, 133),(41, 0, 137),(48, 0, 140),(55, 0, 143),(61, 0, 146),(66, 0, 149),(72, 0, 150),(78, 0, 151),(84, 0, 152),
+        (91, 0, 153),(97, 0, 155),(104, 0, 155),(110, 0, 156),(115, 0, 157),(122, 0, 157),(128, 0, 157),(134, 0, 157),(139, 0, 157),
+        (146, 0, 156),(152, 0, 155),(157, 0, 155),(162, 0, 155),(167, 0, 154),(171, 0, 153),(175, 1, 152),(178, 1, 151),(182, 2, 149),
+        (185, 4, 149),(188, 5, 147),(191, 6, 146),(193, 8, 144),(195, 11, 142),(198, 13, 139),(201, 17, 135),(203, 20, 132),(206, 23, 127),
+        (208, 26, 121),(210, 29, 116),(212, 33, 111),(214, 37, 103),(217, 41, 97),(219, 46, 89),(221, 49, 78),(223, 53, 66),(224, 56, 54),
+        (226, 60, 42),(228, 64, 30),(229, 68, 25),(231, 72, 20),(232, 76, 16),(234, 78, 12),(235, 82, 10),(236, 86, 8),(237, 90, 7),
+        (238, 93, 5),(239, 96, 4),(240, 100, 3),(241, 103, 3),(241, 106, 2),(242, 109, 1),(243, 113, 1),(244, 116, 0),(244, 120, 0),
+        (245, 125, 0),(246, 129, 0),(247, 133, 0),(248, 136, 0),(248, 139, 0),(249, 142, 0),(249, 145, 0),(250, 149, 0),(251, 154, 0),
+        (252, 159, 0),(253, 163, 0),(253, 168, 0),(253, 172, 0),(254, 176, 0),(254, 179, 0),(254, 184, 0),(254, 187, 0),(254, 191, 0),
+        (254, 195, 0),(254, 199, 0),(254, 202, 1),(254, 205, 2),(254, 208, 5),(254, 212, 9),(254, 216, 12),(255, 219, 15),(255, 221, 23),
+        (255, 224, 32),(255, 227, 39),(255, 229, 50),(255, 232, 63),(255, 235, 75),(255, 238, 88),(255, 239, 102),(255, 241, 116),
+        (255, 242, 134),(255, 244, 149),(255, 245, 164),(255, 247, 179),(255, 248, 192),(255, 249, 203),(255, 251, 216),(255, 253, 228),
+        (255, 254, 239)]
+
+    # Interpolacion de valores
+    def lerp(a, b, t):
+        return a + (b - a) * t
+    
+    # Valores iniciales de color
+    b = 1.0
+    g = 1.0
+    r = 1.0
+
+    # Se calcula la normal para el punto
+    normal = [u * nA[0] + v * nB[0] + w * nC[0],
+              u * nA[1] + v * nB[1] + w * nC[1],
+              u * nA[2] + v * nB[2] + w * nC[2],
+              0]
+
+    normal = matrix_vector_multiplier(modelMatrix, normal)
+    normal = [normal[0], normal[1], normal[2]]
+
+    dLight = list(dLight)
+    dLight = [-x for x in dLight]
+    intensity = dot_product(normal, dLight)
+
+    # Si la intensidad es negativa, se establece en cero
+    if intensity <= 0:
+        intensity = 0
+
+    # Se obtiene la direccion hacia adelante de la camara desde la matriz de la camara
+    camForward = (camMatrix[0][2],
+                  camMatrix[1][2],
+                  camMatrix[2][2])
+
+    # Modificacion de paleta segun opcion
+    if thermal == 'a':
+        glowAmount = 1.2 - dot_product(normal, camForward)
+    elif thermal == 'b':
+        glowAmount = 1.6 - dot_product(normal, camForward)
+        iron_palette = iron_palette[::-1]
+
+
+    if glowAmount <= 0:
+        glowAmount = 0
+
+    # Normaliza glowAmount al rango [0, 1]
+    glowAmount = clamp(glowAmount)
+
+    # Mapeo de colores basados en la paleta
+    index1 = int(glowAmount * (len(iron_palette) - 1))
+    index2 = min(index1 + 1, len(iron_palette) - 1)
+
+    color1 = iron_palette[index1]
+    color2 = iron_palette[index2]
+
+    # Calcula el factor de interpolacion
+    t = glowAmount * (len(iron_palette) - 1) - index1
+
+    # Interpola entre los dos colores
+    color = (
+        int(lerp(color1[0], color2[0], t)),
+        int(lerp(color1[1], color2[1], t)),
+        int(lerp(color1[2], color2[2], t))
+    )
+
+    r *= color[0]
+    g *= color[1]
+    b *= color[2]
+
+    # Limitando a valores permitidos los valores r,g,b
+    r = clamp(r)
+    g = clamp(g)
+    b = clamp(b)
+
+    # Retorna los componentes de color modificados
+    return r, g, b
