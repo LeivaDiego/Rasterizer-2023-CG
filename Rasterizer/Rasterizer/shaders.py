@@ -1,5 +1,5 @@
 from myNumpy import cross_product, matrix_multiplier, matrix_vector_multiplier, dot_product, vector_normalize
-from math import sin, sqrt, pi
+from math import sin, sqrt, pi, atan2, floor
 
 # Funcion que evita que los colores se pasen de los limites establecidos
 def clamp(value, min_val=0.0, max_val=1.0):
@@ -507,7 +507,7 @@ def multiTextureShader(**kwargs):
         return [0, 0, 0]
 
 
-def StarmanShader(**kwargs):
+def GlowPatternsShader(glowType, **kwargs):
     # Se extraen los argumentos clave del diccionario kwargs
     texture = kwargs["texture"]
     tA, tB, tC = kwargs["texCoords"]
@@ -549,28 +549,44 @@ def StarmanShader(**kwargs):
     if intensity <= 0:
         intensity = 0
 
-    # Se obtiene la dirección hacia adelante de la cámara desde la matriz de la cámara
+    # Se obtiene la direccion hacia adelante de la camara desde la matriz de la camara
     camForward = (camMatrix[0][2],
                   camMatrix[1][2],
                   camMatrix[2][2])
 
-    # Calcula la cantidad de resplandor en función de la normal y la dirección de la cámara
+    # Calcula la cantidad de resplandor en funcion de la normal y la direccion de la camara
     glowAmount = 1.4 - dot_product(normal, camForward)
     
-    # Si el resplandor es negativo, se establece en cero
+    # Si el brillo es negativo, se establece en cero
     if glowAmount <= 0:
         glowAmount = 0
 
-
-    # Efecto de brillo arcoíris basado en las coordenadas de textura
-    # Dependiendo de las coordenadas de la diagonal se generan los valores para rojo, verde y azul, que varian a partir de 
+    # Efecto de brillo basado en las coordenadas de textura
+    # Dependiendo de las coordenadas se generan los valores para rojo, verde y azul, que varian a partir de 
     # un valor sinusoidal, esto para generar un cambio sutil en las fases de colores
-    diagonalValue = (tU + tV) * 0.5                     # Calcula el valor diagonal promedio en coordenadas de textura
-    rGlow = abs(sin(diagonalValue * 2 * pi))            # Calcula el componente rojo del brillo arcoíris
-    gGlow = abs(sin((diagonalValue + 1/3.0) * 2 * pi))  # Calcula el componente verde del brillo arcoíris
-    bGlow = abs(sin((diagonalValue + 2/3.0) * 2 * pi))  # Calcula el componente azul del brillo arcoíris
 
-    # Interpolación de colores para suavizar el brillo
+    # Calcula el valor diagonal promedio en coordenadas de textura                   
+    diagonalValue = (tU + tV) * 0.5 
+
+    if glowType == "starman":# Efecto arcoiris
+        rGlow = abs(sin(diagonalValue * 2 * pi))            
+        gGlow = abs(sin((diagonalValue + 1/3.0) * 2 * pi))  
+        bGlow = abs(sin((diagonalValue + 2/3.0) * 2 * pi))
+
+    elif glowType == "infernix":# Efecto escudo para "los malos"
+        rGlow = abs(sin(intensity * 2 * pi))
+        gGlow = 0
+        bGlow = 0 
+        maxGreen = 0.5  
+        gGlow = min(gGlow, maxGreen)
+
+    elif glowType == "celestia":# Efecto escudo para "los buenos"
+        rGlow = 0  
+        gGlow = abs(sin((diagonalValue + 1/3.0) * 2 * pi)) * 0.5  
+        bGlow = abs(sin((diagonalValue + 2/3.0) * 2 * pi))
+
+
+    # Interpolacion de colores para difuminar el brillo
     b += glowAmount * bGlow 
     g += glowAmount * gGlow  
     r += glowAmount * rGlow  
