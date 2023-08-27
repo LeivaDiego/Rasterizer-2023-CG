@@ -1,4 +1,10 @@
 # Rasterizer-2023-CG
+## Entrega Proyecto 1
+Los archivos de la entrega de "Proyecto 1: Rasterizer" se encuentran en la main branch
+El output, junto con los .bmp de texturas, normales, fondos, y los .obj de los modelos
+### Nota
+Dentro del codigo especifique en que modelo se utilizo el normal mapping, de todas formas el modelo en el que se uso es la nave que esta mas arriba un tanto a la izquierda
+
 ## Entrega Lab 2
 La primera entrega de "Lab 2: Shaders" (10 de agosto de 2023) se encuentra en la branch llamada lab2
 Solo se encuentra la primera version de un shader que acepta mas de una sola textura para el modelo y los combina
