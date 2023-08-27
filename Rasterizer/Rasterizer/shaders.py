@@ -5,6 +5,7 @@ from math import sqrt
 def clamp(value, min_val=0.0, max_val=1.0):
     return max(min_val, min(value, max_val))
 
+#---------------------------------------Vertex Shaders---------------------------------------
 
 def vertexShader(vertex, **kwargs):
 
@@ -31,35 +32,6 @@ def vertexShader(vertex, **kwargs):
           vt[2]/vt[3]]
 
     return vt
-
-
-def fragmentShader(**kwargs):
-
-    # El Fragment Shader se lleva a cabo por cada pixel
-    # que se renderizara en la pantalla.
-
-    texture = kwargs["texture"]
-    tA, tB, tC = kwargs["texCoords"]
-    u, v, w = kwargs["bCoords"]
-
-
-    b = 1.0
-    g = 1.0
-    r = 1.0
-
-    if texture != None:
-
-        tU = u * tA[0] + v * tB[0] + w * tC[0]
-        tV = u * tA[1] + v * tB[1] + w * tC[1]
-
-        textureColor = texture.getColor(tU, tV)
-        b *= textureColor[2]
-        g *= textureColor[1]
-        r *= textureColor[0]
-
-
-    return r, g, b
-
 
 
 def fatShader(vertex, **kwargs):
@@ -89,6 +61,34 @@ def fatShader(vertex, **kwargs):
 
     return vt
 
+#--------------------------------------Fragment Shaders--------------------------------------
+
+def fragmentShader(**kwargs):
+
+    # El Fragment Shader se lleva a cabo por cada pixel
+    # que se renderizara en la pantalla.
+
+    texture = kwargs["texture"]
+    tA, tB, tC = kwargs["texCoords"]
+    u, v, w = kwargs["bCoords"]
+
+
+    b = 1.0
+    g = 1.0
+    r = 1.0
+
+    if texture != None:
+
+        tU = u * tA[0] + v * tB[0] + w * tC[0]
+        tV = u * tA[1] + v * tB[1] + w * tC[1]
+
+        textureColor = texture.getColor(tU, tV)
+        b *= textureColor[2]
+        g *= textureColor[1]
+        r *= textureColor[0]
+
+
+    return r, g, b
 
 
 def flatShader(**kwargs):
@@ -435,3 +435,76 @@ def yellowGlowShader(**kwargs):
     r = min(r, 1.0)
 
     return r, g, b
+
+
+def multiTextureShader(**kwargs):
+    texture = kwargs["texture"]
+    tA, tB, tC = kwargs["texCoords"]
+    nA, nB, nC = kwargs["normals"]
+    dLight = kwargs["dLight"]
+    u, v, w = kwargs["bCoords"]
+    modelMatrix = kwargs["modelMatrix"]
+    extraTex = kwargs["extraTexture"]
+
+    b = 1.0
+    g = 1.0
+    r = 1.0
+
+    # Calculate the texture coordinates
+    tU = u * tA[0] + v * tB[0] + w * tC[0]
+    tV = u * tA[1] + v * tB[1] + w * tC[1]
+
+
+
+    if texture != None:
+        textureColor = texture.getColor(tU, tV)
+        r *= textureColor[0]
+        g *= textureColor[1]
+        b *= textureColor[2]
+
+    # Obtener el color de la textura extra
+    if extraTex != None:
+        extraColor = extraTex.getColor(tU, tV)
+        extraR = extraColor[0]
+        extraG = extraColor[1]
+        extraB = extraColor[2]
+    else:
+        extraR = 1.0
+        extraG = 1.0
+        extraB = 1.0
+    
+    # Mezcla de colores
+    blendFactor = 0.5
+    r = (r * blendFactor) + (extraR * (1 - blendFactor))
+    g = (g * blendFactor) + (extraG * (1 - blendFactor))
+    b = (b * blendFactor) + (extraB * (1 - blendFactor))
+
+    # Se calcula la normal para el punto
+    normal = [u * nA[0] + v * nB[0] + w * nC[0],
+              u * nA[1] + v * nB[1] + w * nC[1],
+              u * nA[2] + v * nB[2] + w * nC[2],
+              0]
+    
+    normal = matrix_vector_multiplier(modelMatrix, normal)
+    normal = [normal[0], normal[1], normal[2]]
+
+    # Se transforma la direccion de luz
+    dLight = list(dLight)
+    dLight = [-x for x in dLight]
+    intensity = dot_product(normal, dLight)
+    
+
+    r *= intensity
+    g *= intensity
+    b *= intensity
+
+    # Limitando a valores permitidos los valores r,g,b
+    r = clamp(r)
+    g = clamp(g)
+    b = clamp(b)
+
+    # Check if the intensity is greater than 0 to return the values, otherwise return [0,0,0]
+    if intensity > 0:
+        return r, g, b
+    else:
+        return [0, 0, 0]

@@ -27,12 +27,16 @@ class Model(object):
 
         self.texture = None
         self.normalMap = None
+        self.extraTexture = None
 
         self.SetShaders(None, None)
 
 
     def LoadTexture(self, textureName):
         self.texture = Texture(textureName)
+
+    def LoadExtraTexture(self, textureName):
+        self.extraTexture = Texture(textureName)
 
     def LoadNormalMap(self, textureName):
         self.normalMap = Texture(textureName)
@@ -64,6 +68,7 @@ class Renderer(object):
 
         self.activeTexture = None
         self.activeNormalMap = None
+        self.activeExtraTexture = None
 
         self.activeModelMatrix = None
 
@@ -205,7 +210,8 @@ class Renderer(object):
                                                                  bCoords = bCoords,
                                                                  camMatrix = self.camMatrix,
                                                                  modelMatrix = self.activeModelMatrix,
-                                                                 tangent = tangent)
+                                                                 tangent = tangent,
+                                                                 extraTexture = self.activeExtraTexture)
 
                                     self.glPoint(x,y, color(colorP[0], colorP[1], colorP[2]))
 
@@ -457,6 +463,7 @@ class Renderer(object):
             self.vertexShader = model.vertexShader
             self.fragmentShader = model.fragmentShader
             self.activeTexture = model.texture
+            self.activeExtraTexture = model.extraTexture
             self.activeNormalMap = model.normalMap
             self.activeModelMatrix = self.glModelMatrix(model.translate, model.rotate, model.scale)
 
