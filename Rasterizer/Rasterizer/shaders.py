@@ -577,7 +577,7 @@ def multiTextureShader(**kwargs):
         return [0, 0, 0]
 
 
-def GlowPatternsShader(glowType, **kwargs):
+def ShieldShader(glowType, **kwargs):
     texture = kwargs["texture"]
     tA, tB, tC = kwargs["texCoords"]
     nA, nB, nC = kwargs["normals"]
@@ -840,4 +840,56 @@ def UltraShader(glowType, **kwargs):
     b = clamp(b)
 
     # Retorna los componentes de color modificados
+    return r, g, b
+
+
+def BlastShader(glowColor, **kwargs):
+    texture = kwargs["texture"]
+    tA, tB, tC = kwargs["texCoords"]
+    nA, nB, nC = kwargs["normals"]
+    u, v, w = kwargs["bCoords"]
+    camMatrix = kwargs["camMatrix"]
+    modelMatrix = kwargs["modelMatrix"]
+
+    b = 1.0
+    g = 1.0
+    r = 1.0
+
+    tU = u * tA[0] + v * tB[0] + w * tC[0]
+    tV = u * tA[1] + v * tB[1] + w * tC[1]
+
+    if texture != None:
+        textureColor = texture.getColor(tU, tV)
+        b *= textureColor[2]
+        g *= textureColor[1]
+        r *= textureColor[0]
+
+    # Se calcula la normal para el punto
+    normal = [u * nA[0] + v * nB[0] + w * nC[0],
+              u * nA[1] + v * nB[1] + w * nC[1],
+              u * nA[2] + v * nB[2] + w * nC[2],
+              0]
+    
+    normal = matrix_vector_multiplier(modelMatrix, normal)
+    normal = [normal[0], normal[1], normal[2]]
+
+    camForward = (camMatrix[0][2],
+                  camMatrix[1][2],
+                  camMatrix[2][2])
+
+    # El primer valor se puede variar para que el brillo ocupe más o menos del modelo
+    glowAmount = 1 - dot_product(normal, camForward)
+
+    if glowAmount <= 0:
+        glowAmount = 0
+
+    # Utiliza el color de brillo especificado
+    b += glowAmount * glowColor[2]
+    g += glowAmount * glowColor[1]
+    r += glowAmount * glowColor[0]
+
+    b = min(b, 1.0)
+    g = min(g, 1.0)
+    r = min(r, 1.0)
+
     return r, g, b

@@ -10,41 +10,66 @@ height = 540   # Alto en pixeles
 rend = Renderer(width, height)
 rend.glClearColor(0.2, 0.2, 0.2)
 
-rend.glBackgroundTexture("backgrounds/space.bmp")
+rend.glBackgroundTexture("backgrounds/orbit.bmp")
 rend.glClearBackground()
 
 # Se mueve la posicion de la luz
 rend.directionalLight = (0,0,-1)
 
+#-----------------------------Modelos Principales-----------------------------
 
-# Se cargan los modelos con sus efectos a renderizar
-model1 = Model("models/model.obj",
-              translate = (-3,0,-5),                
-              rotate = (0,0,0),                    
-              scale = (1.5, 1.5, 1.5))
-model1.LoadTexture("textures/model.bmp")
-model1.LoadExtraTexture("textures/shield.bmp")
-model1.SetShaders(shaders.vertexShader, lambda **kwargs: shaders.UltraShader(glowType="celestia", **kwargs))
-rend.glAddModel(model1)
+# Las naves buenas------------------------------------------------------------ 
 
-model2 = Model("models/model.obj",
-              translate = (0,0,-5),                
-              rotate = (0,0,0),                    
-              scale = (1.5, 1.5, 1.5))
-model2.LoadTexture("textures/model.bmp")
-model2.SetShaders(shaders.vertexShader, lambda **kwargs: shaders.UltraShader(glowType="starman", **kwargs))
-rend.glAddModel(model2)
+ak5 = Model("models/ak5.obj",
+            translate = (-2.3, -1.6, -6),
+            rotate = (10, -10, -35),
+            scale = (1, 1, 1))
+ak5.LoadTexture("textures/ak5.bmp")
+ak5.SetShaders(shaders.vertexShader, shaders.gouradShader)
+rend.glAddModel(ak5)
 
 
-model3 = Model("models/model.obj",
-              translate = (3,0,-5),                
-              rotate = (0,0,0),                    
-              scale = (1.5, 1.5, 1.5))
-model3.LoadTexture("textures/model.bmp")
-model3.LoadExtraTexture("textures/magma.bmp")
-model3.SetShaders(shaders.vertexShader, lambda **kwargs: shaders.UltraShader(glowType="infernix", **kwargs))
-rend.glAddModel(model3)
+mk6 = Model("models/mk6.obj",
+            translate = (-3.5, 0, -5),
+            rotate = (15, 0, -50),
+            scale = (1, 1, 1))
+mk6.LoadTexture("textures/mk6.bmp")
+mk6.SetShaders(shaders.vertexShader, shaders.gouradShader)
+rend.glAddModel(mk6)
 
+
+
+# Las naves malas--------------------------------------------------------------
+
+
+# la nave nodriza
+luminaris = Model("models/luminaris.obj",
+            translate = (4, 2, -7),
+            rotate = (30, -45, -30),
+            scale = (2, 2, 2))
+luminaris.LoadTexture("textures/luminaris.bmp")
+luminaris.SetShaders(shaders.vertexShader, shaders.gouradShader)
+rend.glAddModel(luminaris)
+
+
+# Los trident se repiten con diferente textura (son escoltas)
+trident1 = Model("models/trident.obj",
+            translate = (5, -1.5, -7),
+            rotate = (35, -45, -25),
+            scale = (1.3, 1.3, 1.3))
+trident1.LoadTexture("textures/trident_toy.bmp")
+trident1.SetShaders(shaders.vertexShader, shaders.gouradShader)
+rend.glAddModel(trident1)
+
+trident2 = Model("models/trident.obj",
+            translate = (0, 2.8, -7),
+            rotate = (30, -10, -40),
+            scale = (1.5, 1.5, 1.5))
+trident2.LoadTexture("textures/trident_cam.bmp")
+trident2.SetShaders(shaders.vertexShader, shaders.gouradShader)
+rend.glAddModel(trident2)
+
+#------------------------------------------------------------------------------
 
 # Renderizar el modelo en la imagen
 rend.glRender()
