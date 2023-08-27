@@ -23,7 +23,7 @@ model1 = Model("models/model.obj",
               rotate = (0,0,0),                    
               scale = (1.5, 1.5, 1.5))
 model1.LoadTexture("textures/model.bmp")
-model1.SetShaders(shaders.waveShader, lambda **kwargs: shaders.GlowPatternsShader(glowType='starman',**kwargs))
+model1.SetShaders(shaders.twistShader, lambda **kwargs: shaders.GlowPatternsShader(glowType='starman',**kwargs))
 rend.glAddModel(model1)
 
 # Renderizar el modelo en la imagen

@@ -1,5 +1,5 @@
 from myNumpy import cross_product, matrix_multiplier, matrix_vector_multiplier, dot_product, vector_normalize
-from math import sin, sqrt, pi, atan2, floor
+from math import sin, cos, pi
 
 # Funcion que evita que los colores se pasen de los limites establecidos
 def clamp(value, min_val=0.0, max_val=1.0):
@@ -98,6 +98,35 @@ def waveShader(vertex, **kwargs):
     return vt
 
 
+def twistShader(vertex, **kwargs):
+    modelMatrix = kwargs["modelMatrix"]
+    viewMatrix = kwargs["viewMatrix"]
+    projectionMatrix = kwargs["projectionMatrix"]
+    vpMatrix = kwargs["vpMatrix"]
+
+    angle = pi / 4  # Ángulo de torsion
+
+    cosA = cos(angle * vertex[1])
+    sinA = sin(angle * vertex[1])
+
+    vt = [
+        cosA * vertex[0] - sinA * vertex[2],
+        vertex[1],
+        sinA * vertex[0] + cosA * vertex[2],
+        1
+    ]
+
+    temp1 = matrix_multiplier(vpMatrix, projectionMatrix)
+    temp2 = matrix_multiplier(temp1, viewMatrix)
+    temp3 = matrix_multiplier(temp2, modelMatrix)
+
+    vt =  matrix_vector_multiplier(temp3, vt)
+
+    vt = [vt[0]/vt[3],
+          vt[1]/vt[3],
+          vt[2]/vt[3]]
+
+    return vt
 #--------------------------------------Fragment Shaders--------------------------------------
 
 def fragmentShader(**kwargs):
